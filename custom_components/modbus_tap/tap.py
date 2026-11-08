@@ -175,7 +175,7 @@ class Tap:
             model = str(decode(entry.data_type, registers, entry.swap))
             if model and self._models.get(unit) != model:
                 self._models[unit] = model
-                if device := devices.async_get_device(identifiers={unit_identifier(self.entry, unit)}):
+                if device := devices.async_get_device_by_identifier(unit_identifier(self.entry, unit), self.entry.entry_id):
                     devices.async_update_device(device.id, model=model)
 
     @callback

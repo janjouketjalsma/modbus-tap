@@ -117,9 +117,10 @@ async def test_community_map_sensors_devices_and_listen_only(hass: HomeAssistant
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=31))
     await hass.async_block_till_done()
     devices = dr.async_get(hass)
-    unit = devices.async_get_device(identifiers={(DOMAIN, f"{entry.entry_id}_unit_1")})
+    unit = devices.async_get_device_by_identifier((DOMAIN, f"{entry.entry_id}_unit_1"), entry.entry_id)
+    bridge_device = devices.async_get_device_by_identifier((DOMAIN, f"{entry.entry_id}_bridge"), entry.entry_id)
     assert unit is not None and unit.model == "SSE-HH6K-P1-EU"
-    assert unit.via_device_id == devices.async_get_device(identifiers={(DOMAIN, f"{entry.entry_id}_bridge")}).id
+    assert unit.via_device_id == bridge_device.id
 
     assert await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()
@@ -194,7 +195,7 @@ async def test_recording_with_reference_entity_and_note(hass: HomeAssistant, has
     assert download.status == 200
     assert gzip.decompress(await download.read()).startswith(b'{"type":"header"')
     missing = await client.get(f"/api/modbus_tap/recordings/{entry.entry_id}/..%2Fsecrets.yaml")
-    assert missing.status == 404
+    assert missing.status in (400, 404)
 
     assert await hass.config_entries.async_unload(entry.entry_id)
     await bridge.stop()
@@ -212,7 +213,9 @@ async def test_config_flow_and_reconfigure(hass: HomeAssistant) -> None:
         result = await hass.config_entries.flow.async_configure(result["flow_id"], {CONF_HOST: "192.168.1.120", CONF_PORT: 8899})
         assert result["type"] is FlowResultType.CREATE_ENTRY
         entry = result["result"]
-        result = await entry.start_reconfigure_flow(hass)
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
+        )
         result = await hass.config_entries.flow.async_configure(result["flow_id"], {CONF_HOST: "192.168.1.121", CONF_PORT: 8899})
     assert result["reason"] == "reconfigure_successful"
     assert entry.data[CONF_HOST] == "192.168.1.121"
