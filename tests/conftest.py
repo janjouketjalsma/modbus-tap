@@ -1,14 +1,13 @@
-"""Load the integration's pure-Python modules without Home Assistant."""
+"""Load the integration's plain-Python modules without Home Assistant installed."""
 
 import sys
 import types
 from pathlib import Path
 
-PKG_DIR = Path(__file__).parents[1] / "custom_components" / "modbus_tap"
+PACKAGE_DIR = Path(__file__).parents[1] / "custom_components" / "modbus_tap"
 
-# A bare package object, so `from .rtu import ...` works inside regmap.py
-# without executing __init__.py (which imports Home Assistant).
-if "msn" not in sys.modules:
-    pkg = types.ModuleType("msn")
-    pkg.__path__ = [str(PKG_DIR)]
-    sys.modules["msn"] = pkg
+# A bare package, so relative imports work without running __init__.py.
+if "tap" not in sys.modules:
+    package = types.ModuleType("tap")
+    package.__path__ = [str(PACKAGE_DIR)]
+    sys.modules["tap"] = package

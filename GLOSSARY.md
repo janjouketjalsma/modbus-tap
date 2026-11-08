@@ -44,6 +44,10 @@ _Avoid_: Sniffer, hub, gateway
 The device that forwards every byte heard on the **Bus** to Home Assistant over the network, such as an Elfin EW11 in transparent mode.
 _Avoid_: Gateway, converter, adapter
 
+**Tap cable**:
+A cable that adds a branch to an existing **Bus** connection so a **Bridge** can listen in, often made from an extension cable.
+_Avoid_: Splitter, Y-cable, sniffer cable
+
 **Recording**:
 A time-stamped log of every decoded **Transaction** on a **Bus**, started and stopped by the user, used to work out what **Registers** mean.
 _Avoid_: Capture, dump, trace
