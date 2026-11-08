@@ -1,0 +1,20 @@
+{
+  "entity": {
+    "sensor": {
+      "connection": { "default": "mdi:lan-connect" },
+      "frames_decoded": { "default": "mdi:counter" },
+      "bytes_discarded": { "default": "mdi:delete-sweep-outline" },
+      "last_transaction": { "default": "mdi:swap-horizontal" },
+      "recording": { "default": "mdi:record-rec" }
+    },
+    "button": {
+      "start_recording": { "default": "mdi:record" },
+      "stop_recording": { "default": "mdi:stop" }
+    }
+  },
+  "services": {
+    "start_recording": { "service": "mdi:record" },
+    "stop_recording": { "service": "mdi:stop" },
+    "add_note": { "service": "mdi:note-edit-outline" }
+  }
+}

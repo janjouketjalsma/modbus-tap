@@ -1,0 +1,40 @@
+start_recording:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: modbus_tap
+    hours:
+      default: 24
+      selector:
+        number:
+          min: 0.05
+          max: 24
+          step: 0.05
+          unit_of_measurement: h
+          mode: box
+    reference_entities:
+      selector:
+        entity:
+          multiple: true
+
+stop_recording:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: modbus_tap
+
+add_note:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: modbus_tap
+    text:
+      required: true
+      selector:
+        text:

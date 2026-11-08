@@ -1,0 +1,65 @@
+# Sosen SSE-HH6K-P1-EU hybrid inverter, as polled by an Elinter Magpie at unit address 1.
+# Worked out from bus recordings; no manufacturer document was found.
+# Entries without `verified` are educated guesses: check them against your app and
+# send a pull request with what you find.
+name: SSE-HH6K hybrid inverter
+manufacturer: Sosen
+match:
+  model_text: "^SSE-HH"
+  reads: ["input 1-100", "input 101-203"]
+sensors:
+  - name: Model
+    address: 144
+    input_type: input
+    data_type: string
+    count: 8
+    model: true
+    verified: "SSE-HH6K-P1-EU, firmware V1.16 (reads 'SSE-HH6K-P1-EU')"
+  - name: Firmware
+    address: 182
+    input_type: input
+    data_type: string
+    count: 3
+    verified: "SSE-HH6K-P1-EU, firmware V1.16 (reads 'V1.16')"
+  - name: Grid voltage
+    address: 37
+    input_type: input
+    data_type: uint16
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+  - name: Grid frequency
+    address: 46
+    input_type: input
+    data_type: uint16
+    scale: 0.01
+    precision: 2
+    unit_of_measurement: Hz
+    device_class: frequency
+    state_class: measurement
+  - name: Output voltage
+    address: 49
+    input_type: input
+    data_type: uint16
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+  - name: Output frequency
+    address: 58
+    input_type: input
+    data_type: uint16
+    scale: 0.01
+    precision: 2
+    unit_of_measurement: Hz
+    device_class: frequency
+    state_class: measurement
+  - name: Rated power
+    address: 152
+    input_type: input
+    data_type: uint16
+    unit_of_measurement: W
+    device_class: power

@@ -36,6 +36,7 @@ class BridgeListener:
         self.bytes_received = 0
         self.zero_bytes = 0  # many zero bytes in undecodable data hint at swapped A/B
         self.last_data: float | None = None  # monotonic
+        self.connected_since: float | None = None  # monotonic
         self._on_transactions = on_transactions
         self._on_status = on_status
         self._stop = asyncio.Event()
@@ -107,4 +108,12 @@ class BridgeListener:
     def _set_connected(self, value: bool) -> None:
         if self.connected != value:
             self.connected = value
+            self.connected_since = time.monotonic() if value else None
             self._on_status()
+
+    def quiet_seconds(self) -> float | None:
+        """Seconds since anything was heard on this connection."""
+        if not self.connected:
+            return None
+        since = max(filter(None, (self.last_data, self.connected_since)), default=None)
+        return None if since is None else time.monotonic() - since

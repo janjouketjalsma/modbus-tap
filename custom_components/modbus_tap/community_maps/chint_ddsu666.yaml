@@ -1,0 +1,70 @@
+# Chint DDSU666 single-phase energy meter.
+# Source: "Chint single phase meter DDSU666 instructions", Modbus RTU register table
+# (https://www.deyeinverter.com/deyeinverter/2023/10/13/chint-singlephasemeterddsu666-instructions.pdf).
+# The meter answers function 03 only; values are 32-bit floats.
+name: DDSU666 energy meter
+manufacturer: Chint
+sensors:
+  - name: Voltage
+    address: 0x2000
+    data_type: float32
+    precision: 1
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+    documented: "Chint DDSU666 instructions, register 2000H"
+  - name: Current
+    address: 0x2002
+    data_type: float32
+    precision: 2
+    unit_of_measurement: A
+    device_class: current
+    state_class: measurement
+    documented: "Chint DDSU666 instructions, register 2002H"
+  - name: Active power
+    address: 0x2004
+    data_type: float32
+    precision: 3
+    unit_of_measurement: kW
+    device_class: power
+    state_class: measurement
+    documented: "Chint DDSU666 instructions, register 2004H"
+  - name: Reactive power
+    address: 0x2006
+    data_type: float32
+    precision: 3
+    unit_of_measurement: kvar
+    device_class: reactive_power
+    state_class: measurement
+    documented: "Chint DDSU666 instructions, register 2006H"
+  - name: Power factor
+    address: 0x200A
+    data_type: float32
+    precision: 3
+    device_class: power_factor
+    state_class: measurement
+    documented: "Chint DDSU666 instructions, register 200AH"
+  - name: Frequency
+    address: 0x200E
+    data_type: float32
+    precision: 2
+    unit_of_measurement: Hz
+    device_class: frequency
+    state_class: measurement
+    documented: "Chint DDSU666 instructions, register 200EH"
+  - name: Energy imported
+    address: 0x4000
+    data_type: float32
+    precision: 2
+    unit_of_measurement: kWh
+    device_class: energy
+    state_class: total_increasing
+    documented: "Chint DDSU666 instructions, register 4000H (forward active energy)"
+  - name: Energy exported
+    address: 0x400A
+    data_type: float32
+    precision: 2
+    unit_of_measurement: kWh
+    device_class: energy
+    state_class: total_increasing
+    documented: "Chint DDSU666 instructions, register 400AH (reverse active energy)"

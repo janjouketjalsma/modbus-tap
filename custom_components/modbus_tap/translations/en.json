@@ -1,0 +1,217 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to your bridge",
+        "description": "Enter the network address of the RS485 bridge that listens to your bus (for example an Elfin EW11 in transparent mode). Modbus Tap only listens; it never sends anything on the bus.\n\nStill wiring things up? See the [tapping guide]({guide}).",
+        "data": {
+          "host": "Host",
+          "port": "Port"
+        },
+        "data_description": {
+          "host": "IP address or hostname of the bridge.",
+          "port": "TCP port of the bridge's transparent socket (8899 on Elfin devices)."
+        }
+      },
+      "reconfigure": {
+        "title": "Change the bridge address",
+        "data": {
+          "host": "Host",
+          "port": "Port"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Couldn't open a connection. Check the address and that the bridge accepts another client."
+    },
+    "abort": {
+      "already_configured": "This bridge is already set up.",
+      "reconfigure_successful": "Bridge address updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configure Modbus Tap",
+        "menu_options": {
+          "pick_unit": "Register maps",
+          "recordings": "Recordings",
+          "export": "Export to core Modbus",
+          "settings": "Settings"
+        }
+      },
+      "pick_unit": {
+        "title": "Which unit?",
+        "description": "Pick a unit address heard on the bus, or type one.",
+        "data": {
+          "unit": "Unit address"
+        }
+      },
+      "unit_map": {
+        "title": "Register map for unit {unit}",
+        "description": "Start from a community map, then add or correct entries below. Entries use the core Modbus sensor format, so existing core Modbus sensor configs paste right in. Your entries override community entries with the same table and address.",
+        "data": {
+          "community_map": "Community map",
+          "overrides": "Your entries (YAML)"
+        }
+      },
+      "recordings": {
+        "title": "Recordings",
+        "description": "{recordings}\n\nDownload links work for one hour. Select recordings below to delete them.",
+        "data": {
+          "delete": "Delete"
+        }
+      },
+      "export": {
+        "title": "Export to core Modbus",
+        "description": "Ready to replace your poller? Paste this into `configuration.yaml`. It polls the same units through the same bridge, at the rate your poller used.\n\n```yaml\n{yaml}\n```"
+      },
+      "settings": {
+        "title": "Settings",
+        "data": {
+          "write_events": "Fire an event for every write",
+          "reference_entities": "Reference entities for recordings",
+          "keep_recordings": "Recordings to keep"
+        },
+        "data_description": {
+          "write_events": "Fires `modbus_tap_write` with the unit, registers, values and outcome whenever the poller writes.",
+          "reference_entities": "Values logged next to the bus traffic in every recording started with the button, such as your inverter's cloud sensors.",
+          "keep_recordings": "Older recordings are deleted automatically."
+        }
+      }
+    },
+    "error": {
+      "invalid_map": "That map didn't parse: {error}",
+      "invalid_unit": "Enter a unit address from 1 to 247."
+    },
+    "abort": {
+      "not_loaded": "Modbus Tap isn't running right now. Try again once it has started.",
+      "recordings_updated": "Recordings updated.",
+      "no_recordings": "No recordings yet. Press Start recording on the bridge device to make one.",
+      "export_done": "Done.",
+      "nothing_to_export": "No register maps yet. Add one under Register maps first."
+    }
+  },
+  "device": {
+    "bridge": {
+      "name": "Bridge {title}"
+    },
+    "unit": {
+      "name": "Unit {address}"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "connection": {
+        "name": "Connection",
+        "state": {
+          "connected": "Connected",
+          "disconnected": "Disconnected"
+        }
+      },
+      "frames_decoded": {
+        "name": "Frames decoded"
+      },
+      "bytes_discarded": {
+        "name": "Bytes discarded"
+      },
+      "last_transaction": {
+        "name": "Last transaction"
+      },
+      "recording": {
+        "name": "Recording"
+      }
+    },
+    "button": {
+      "start_recording": {
+        "name": "Start recording"
+      },
+      "stop_recording": {
+        "name": "Stop recording"
+      }
+    }
+  },
+  "services": {
+    "start_recording": {
+      "name": "Start recording",
+      "description": "Starts logging every transaction on the bus, plus reference values and notes, to a file you can analyse later.",
+      "fields": {
+        "config_entry": {
+          "name": "Bus",
+          "description": "The Modbus Tap bus to record."
+        },
+        "hours": {
+          "name": "Hours",
+          "description": "Stop automatically after this many hours (at most 24)."
+        },
+        "reference_entities": {
+          "name": "Reference entities",
+          "description": "Entities whose values are logged alongside the bus traffic. Defaults to the ones in Settings."
+        }
+      }
+    },
+    "stop_recording": {
+      "name": "Stop recording",
+      "description": "Stops the running recording.",
+      "fields": {
+        "config_entry": {
+          "name": "Bus",
+          "description": "The Modbus Tap bus that is recording."
+        }
+      }
+    },
+    "add_note": {
+      "name": "Add note",
+      "description": "Adds a time-stamped note to the running recording, such as \"kettle on\" or \"app shows 2.1 kW solar\".",
+      "fields": {
+        "config_entry": {
+          "name": "Bus",
+          "description": "The Modbus Tap bus that is recording."
+        },
+        "text": {
+          "name": "Text",
+          "description": "The note."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "entry_not_loaded": {
+      "message": "That Modbus Tap bus isn't running."
+    },
+    "already_recording": {
+      "message": "A recording is already running on this bus."
+    },
+    "not_recording": {
+      "message": "Nothing is recording on this bus."
+    }
+  },
+  "issues": {
+    "silent": {
+      "title": "Modbus Tap hears nothing on {title}",
+      "description": "The bridge is connected, but no bytes have arrived for over ten minutes. Check the wiring between the bus and the bridge, and that the poller is running."
+    },
+    "reversed": {
+      "title": "Modbus Tap can't decode the bus on {title}",
+      "description": "Data arrives but no valid Modbus frames, and it's mostly zero bytes. That usually means the A and B wires are swapped. Swapping them is harmless; try that first, then check the baud rate."
+    },
+    "undecodable": {
+      "title": "Modbus Tap can't decode the bus on {title}",
+      "description": "Data arrives but no valid Modbus frames. Check the bridge's baud rate and parity first (save and reboot the bridge after each change), then try swapping A and B."
+    },
+    "suggest_map": {
+      "title": "Unit {unit} on {title} looks like a {map}",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Use the {map} community map?",
+            "description": "Unit {unit} matches the community map for the {map}. Use it as the base for this unit's register map? Your own entries stay on top."
+          }
+        },
+        "abort": {
+          "entry_gone": "This bus has been removed."
+        }
+      }
+    }
+  }
+}
