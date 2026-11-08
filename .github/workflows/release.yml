@@ -1,8 +1,14 @@
 name: Release
 
+# Releasing is bumping the version: when the manifest version on main has no
+# release yet, this publishes one, with that version's changelog section as notes.
 on:
   push:
-    tags: ["v*.*.*"]
+    branches: [main]
+    paths:
+      - custom_components/modbus_tap/manifest.json
+      - CHANGELOG.md
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -12,16 +18,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check the tag matches the manifest version
+      - name: Read the version
+        id: version
         run: |
-          tag="${GITHUB_REF_NAME#v}"
-          manifest=$(python3 -c "import json;print(json.load(open('custom_components/modbus_tap/manifest.json'))['version'])")
-          echo "tag=$tag manifest=$manifest"
-          test "$tag" = "$manifest"
+          version=$(python3 -c "import json;print(json.load(open('custom_components/modbus_tap/manifest.json'))['version'])")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Skip if already released
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "v${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Extract release notes from the changelog
+        if: steps.check.outputs.exists == 'false'
         run: |
-          version="${GITHUB_REF_NAME#v}"
-          awk -v v="$version" '
+          awk -v v="${{ steps.version.outputs.version }}" '
             $0 ~ "^## \\[" v "\\]" {found=1; next}
             found && /^## \[/ {exit}
             found && /^\[.*\]: / {exit}
@@ -29,6 +44,9 @@ jobs:
           ' CHANGELOG.md > notes.md
           test -s notes.md
       - name: Publish the release
+        if: steps.check.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md
+        run: |
+          tag="v${{ steps.version.outputs.version }}"
+          gh release create "$tag" --target "$GITHUB_SHA" --title "$tag" --notes-file notes.md

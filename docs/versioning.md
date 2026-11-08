@@ -27,4 +27,4 @@ From 1.0 on, only MAJOR bumps break things. MINOR adds features, PATCH fixes bug
 
 1. Move the `Unreleased` changelog entries under a new version heading, and mark breaking changes with **⚠️ Breaking**.
 2. Set the same version in `custom_components/modbus_tap/manifest.json`.
-3. Commit, then tag `vX.Y.Z` and push the tag. The release workflow checks that the tag matches the manifest and publishes the GitHub release with the changelog section as notes.
+3. Commit to `main`. The release workflow sees a version without a release, tags it `vX.Y.Z` and publishes the GitHub release with that changelog section as notes.
