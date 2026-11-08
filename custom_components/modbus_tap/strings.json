@@ -115,9 +115,6 @@
       "bytes_discarded": {
         "name": "Bytes discarded"
       },
-      "last_transaction": {
-        "name": "Last transaction"
-      },
       "recording": {
         "name": "Recording"
       }

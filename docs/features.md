@@ -14,7 +14,7 @@ Everything Modbus Tap does, with links to the details.
 - **Named, scaled sensors** from each unit's [register map](register-maps.md), in the core Modbus sensor format.
 - **The model comes from the device.** The model is read from the unit itself when its map marks a model register.
 - **Stale values go unavailable** after three missed polls (never sooner than five minutes), so a stopped logger doesn't leave frozen numbers behind.
-- **Bridge health sensors:** connection, frames decoded, bytes discarded, last transaction and the running recording.
+- **Bridge health sensors:** connection and the running recording update right away; the frames decoded and bytes discarded counters update every 30 seconds, so they don't flood your history.
 
 ## Register maps
 

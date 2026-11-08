@@ -6,7 +6,6 @@ import logging
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -92,6 +91,7 @@ class MappedSensor(TapEntity, SensorEntity):
 @dataclass(frozen=True, kw_only=True)
 class BridgeSensorDescription(SensorEntityDescription):
     value: Callable[[Tap], Any]
+    live: bool = False  # True: update on every change; False: at most once per Tap tick
 
 
 BRIDGE_SENSORS = (
@@ -101,6 +101,7 @@ BRIDGE_SENSORS = (
         device_class=SensorDeviceClass.ENUM,
         options=["connected", "disconnected"],
         value=lambda tap: "connected" if tap.listener.connected else "disconnected",
+        live=True,
     ),
     BridgeSensorDescription(
         key="frames_decoded",
@@ -117,16 +118,10 @@ BRIDGE_SENSORS = (
         value=lambda tap: tap.listener.decoder.discarded_bytes,
     ),
     BridgeSensorDescription(
-        key="last_transaction",
-        translation_key="last_transaction",
-        device_class=SensorDeviceClass.TIMESTAMP,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value=lambda tap: datetime.fromtimestamp(tap.last_transaction, UTC) if tap.last_transaction else None,
-    ),
-    BridgeSensorDescription(
         key="recording",
         translation_key="recording",
         value=lambda tap: tap.session.name if tap.session else None,
+        live=True,
     ),
 )
 
@@ -142,7 +137,9 @@ class BridgeSensor(TapEntity, SensorEntity):
         self._last: Any = None
 
     async def async_added_to_hass(self) -> None:
-        self.async_on_remove(self.tap.listen_status(self._status_changed))
+        # Counters change with every frame; refreshing them on each one would flood the history.
+        listen = self.tap.listen_status if self.entity_description.live else self.tap.listen_tick
+        self.async_on_remove(listen(self._status_changed))
 
     @callback
     def _status_changed(self) -> None:

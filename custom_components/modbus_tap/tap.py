@@ -74,8 +74,8 @@ class Tap:
         self.listener = BridgeListener(entry.data[CONF_HOST], entry.data[CONF_PORT], RtuDecoder(), self._on_transactions, self._on_status)
         self.library = RecordingLibrary(Path(hass.config.path(RECORDINGS_PATH, entry.entry_id)))
         self.session: RecordingSession | None = None
-        self.last_transaction: float | None = None
         self._status_listeners: set[Callable[[], None]] = set()
+        self._tick_listeners: set[Callable[[], None]] = set()
         self._models: dict[int, str] = {}
 
     # --- lifecycle ----------------------------------------------------------
@@ -124,7 +124,6 @@ class Tap:
                         "exception_code": tx.exception_code,
                     },
                 )
-        self.last_transaction = now
 
     @callback
     def _on_status(self) -> None:
@@ -136,8 +135,16 @@ class Tap:
         self._status_listeners.add(listener)
         return lambda: self._status_listeners.discard(listener)
 
+    @callback
+    def listen_tick(self, listener: Callable[[], None]) -> Callable[[], None]:
+        """Called every TICK; for values that change too often to push on every frame."""
+        self._tick_listeners.add(listener)
+        return lambda: self._tick_listeners.discard(listener)
+
     async def _async_tick(self, _now: Any = None) -> None:
         now = time.time()
+        for listener in list(self._tick_listeners):
+            listener()
         self.store.check_stale(now)
         self._update_models()
         self._suggest_maps()
