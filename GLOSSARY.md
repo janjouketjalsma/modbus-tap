@@ -61,3 +61,15 @@ _Avoid_: Built-in map, template, preset
 **Override**:
 A user's own entry that replaces or adds to an entry of the **Community map** it is based on, matched by **Unit address**, table and address.
 _Avoid_: Patch, customisation
+
+**Documented**:
+A **Register map** entry whose meaning comes from a written source, such as the manufacturer's protocol document.
+_Avoid_: Official, specified
+
+**Verified**:
+A **Register map** entry that someone has checked against a real device, recorded with that device's model and firmware.
+_Avoid_: Tested, confirmed
+
+**Guessed**:
+A **Register map** entry that is neither **Documented** nor **Verified**, typically inferred from bus traffic.
+_Avoid_: Unverified, inferred, unknown
