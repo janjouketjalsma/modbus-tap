@@ -7,6 +7,7 @@ import gzip
 import json
 from datetime import timedelta
 from pathlib import Path
+from urllib.parse import urlsplit
 from unittest.mock import patch
 
 import pytest
@@ -191,7 +192,8 @@ async def test_recording_with_reference_entity_and_note(hass: HomeAssistant, has
     assert [line["state"] for line in lines if line["type"] == "entity"] == ["2100", "2200"]
 
     client = await hass_client()
-    download = await client.get(tap.download_url(name))
+    link = urlsplit(tap.download_url(name))
+    download = await client.get(f"{link.path}?{link.query}")
     assert download.status == 200
     assert gzip.decompress(await download.read()).startswith(b'{"type":"header"')
     missing = await client.get(f"/api/modbus_tap/recordings/{entry.entry_id}/..%2Fsecrets.yaml")

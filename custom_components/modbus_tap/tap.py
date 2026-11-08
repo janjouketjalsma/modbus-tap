@@ -16,6 +16,7 @@ from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.network import NoURLAvailableError, get_url
 
 from . import issues
 from .bridge import BridgeListener
@@ -242,5 +243,13 @@ class Tap:
 
     @callback
     def download_url(self, name: str) -> str:
-        path = DOWNLOAD_URL.format(entry_id=self.entry.entry_id, name=name)
-        return async_sign_path(self.hass, path, LINK_LIFETIME)
+        """A signed, absolute link to a Recording.
+
+        Absolute, so the frontend and the companion apps open it as a download
+        instead of treating it as a page inside Home Assistant.
+        """
+        path = async_sign_path(self.hass, DOWNLOAD_URL.format(entry_id=self.entry.entry_id, name=name), LINK_LIFETIME)
+        try:
+            return get_url(self.hass) + path
+        except NoURLAvailableError:
+            return path

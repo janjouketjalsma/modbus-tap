@@ -4,6 +4,12 @@ All notable changes to Modbus Tap. Versions follow [Semantic Versioning](https:/
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-09
+
+### Fixed
+
+- Recording download links now work in the Home Assistant companion apps: they open as a download instead of jumping back to the main page.
+
 ## [0.1.0] - 2026-11-08
 
 First release.
@@ -21,5 +27,6 @@ First release.
 - Diagnostics with every register heard and hints.
 - Export to core Modbus YAML.
 
-[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/janjouketjalsma/modbus-tap/releases/tag/v0.1.0
