@@ -1,129 +1,56 @@
-# Modbus Tap for Home Assistant
+# Modbus Tap
 
-Listen in on an existing Modbus RTU (RS485) bus and turn the values that go
-past into Home Assistant sensors, **without ever transmitting on the bus**.
+![Modbus Tap icon](custom_components/modbus_tap/brand/icon.png)
 
-Typical use: an inverter is already polled by a vendor dongle or data logger
-(for example an Elinter Magpie), and you want the same data in Home Assistant
-without adding a second Modbus master that could collide with it.
+Listen in on a Modbus RTU bus that's already in use, and turn what goes past into Home Assistant sensors. **Modbus Tap never transmits.** Your inverter's logger, dongle or meter keeps working exactly as before.
 
-```
-inverter ⇄ RS485 ⇄ vendor dongle (master)
-                │
-                └── TCP-to-RS485 bridge (e.g. Elfin EW11) ──Wi-Fi──► Home Assistant (listens only)
-```
+It's for buses that already have a poller, such as a solar inverter with a vendor Wi-Fi dongle or a heat pump with its own controller. Polling them yourself would make a second master and risk collisions. Modbus Tap just listens.
 
-## How it works
+## What you get
 
-1. A serial-to-network bridge sits on the bus in **transparent** mode and
-   forwards every byte it hears over TCP.
-2. The integration connects to it, splits the stream into Modbus RTU frames
-   using the CRC, pairs each request with its response, and keeps a table of
-   every register value it has seen (holding and input registers, coils,
-   discrete inputs, and values written with function 6/16).
-3. Sensors are created from that table:
-   - **Raw sensors**: one per register, created automatically the first time
-     it is seen. They are disabled by default; enable the ones you want to
-     watch. Attributes show hex, signed value, ASCII, min/max and how often it
-     changed.
-   - **Mapped sensors**: named, scaled sensors with units and device classes,
-     defined in a small YAML register map from the UI.
-   - **Status sensors**: connection state, frames decoded, bytes discarded,
-     registers seen, and the time of the last frame.
+- **Plug-in setup:** add the integration, enter your RS485 bridge's address, done.
+- **One device per unit:** every Modbus unit on the bus shows up as its own device.
+- **Core Modbus register maps:** existing core Modbus sensor YAML pastes right in.
+- **Community maps:** ready-made maps you can use as a base and correct where needed. Modbus Tap suggests one when your device matches.
+- **Recordings:** a timestamped log of all bus traffic, alongside other Home Assistant values and your own notes. That's everything you need to work out an unknown register map, with or without an AI assistant.
+- **Writes:** see what the poller writes, and whether the device accepted it. Optionally, you also get an event for each write.
+- **Export to core Modbus:** ready to replace the vendor dongle? Export your map as `modbus:` YAML.
 
-You only get the registers the existing master asks for, at the rate it asks
-for them.
+## How it compares
 
-## Installation (HACS)
+| | Modbus Tap | ESPHome sniffer¹ | ESPHome | HA Modbus |
+|---|---|---|---|---|
+| Listens only (safe next to your logger) | ✅ | ✅ | ❌ | ❌ |
+| Hardware | Network bridge | ESP32 + RS485 | ESP + RS485 | USB or network |
+| Setup | UI | YAML + flash | YAML + flash | YAML |
+| Helps find unknown registers | ✅ | ❌ | ❌ | ❌ |
+| Register format | Core Modbus | ESPHome | ESPHome | Core Modbus |
+| Shared maps | ✅ | ❌ | Some meters | ❌ |
+| Controls the device | ❌ | ❌ | ✅ | ✅ |
+| Status | New | In review | Stable | Stable |
 
-1. HACS → three dots → **Custom repositories** → add this repository's URL
-   with type **Integration**.
-2. Install **Modbus Tap** and restart Home Assistant.
-3. **Settings → Devices & services → Add integration → Modbus Tap**, and
-   enter the bridge's IP address and port (8899 by default on Elfin devices).
+¹ In development: [esphome/esphome#19450](https://github.com/esphome/esphome/pull/19450)
 
-## Bridge settings (Elfin EW11 and similar)
+## Install
 
-| Setting | Value |
+1. In Home Assistant, open **Settings → Marketplace** (HACS before 2026.11), choose **Add from link** and paste `https://github.com/janjouketjalsma/modbus-tap`.
+2. Install **Modbus Tap**.
+3. **Settings → Devices & services → Add integration → Modbus Tap**, and enter your bridge's address and port.
+
+## Docs
+
+| Guide | For |
 |---|---|
-| Serial: baud, data bits, parity, stop bits | Exactly what the bus uses (for example 115200 8N1) |
-| Flow control | Half duplex (RS485) |
-| Protocol | **None** (transparent), *not* Modbus |
-| Route | UART |
-| Socket | TCP server, port 8899 |
-| Gap time | 10 ms works well |
+| [Tapping your bus](docs/tapping-your-bus.md) | Finding the pins with a multimeter, building a tap cable, wiring and setting up the bridge, troubleshooting |
+| [Register maps](docs/register-maps.md) | The map format, community maps and overrides, documented and verified |
+| [Working out a register map](docs/working-out-a-register-map.md) | Recordings, diagnostics and an AI-ready method and prompt |
+| [Recording format](docs/recording-format.md) | The file format, for scripts and assistants |
+| [Replacing your poller](docs/replacing-your-poller.md) | Moving to core Modbus once your map is complete |
+| [Decisions](docs/adr/) and [glossary](GLOSSARY.md) | Why things are the way they are, and what the words mean |
 
-Many bridges accept only one TCP client, so close any other tools connected
-to the port.
+## Contributing
 
-### If you get no sensors
-
-Check the **Frames decoded** and **Bytes discarded** status sensors:
-
-- **Nothing received at all**: wiring or IP/port problem.
-- **Lots of discarded bytes, no frames**: the bridge does not decode the bus.
-  The two usual causes are:
-  - **A and B swapped.** RS485 vendors label A/B inconsistently. Swapping the
-    two data wires is harmless; try it first.
-  - **Wrong baud rate.** Try 9600, 19200, 38400, 57600 and 115200 (8N1). Save
-    *and reboot* the bridge after each change.
-- Connect the signal ground (GND) between the bus and the bridge if one is
-  available.
-
-## Register map
-
-**Settings → Devices & services → Modbus Tap → Configure.** The map is a
-YAML list:
-
-```yaml
-- name: Grid voltage
-  address: 37            # register number (decimal, or 0x25)
-  table: input           # input (default), holding, coil or discrete
-  slave: 1               # default 1
-  data_type: uint16      # uint16 (default), int16, uint32, int32,
-                         # uint32_swap, int32_swap, string
-  scale: 0.1             # value = raw * scale + offset
-  offset: 0
-  precision: 1
-  unit_of_measurement: V
-  device_class: voltage
-  state_class: measurement
-- name: Battery power
-  address: 40
-  data_type: int16
-  unit_of_measurement: W
-  device_class: power
-  state_class: measurement
-- name: Energy exported
-  address: 120
-  data_type: uint32      # two registers, high word first
-  scale: 0.1
-  unit_of_measurement: kWh
-  device_class: energy
-  state_class: total_increasing
-- name: Model
-  address: 144
-  data_type: string
-  count: 8               # registers (2 characters each)
-```
-
-`examples/` contains starting points for specific devices.
-
-## Finding out what registers mean
-
-- Enable a few **raw sensors** and compare their history with the vendor app
-  or the device's display.
-- **Download diagnostics** (integration page → three dots) for a table of
-  every register with hints such as *mains voltage x0.1 V?*, *probably
-  signed*, *only increases (counter?)* and text strings found on the bus.
-  Diagnostics can include serial numbers read from your devices, so check
-  before sharing them.
-
-## Limitations
-
-- Passive only: it cannot read registers the existing master doesn't poll.
-- Modbus RTU only (not Modbus ASCII or TCP framing on the bus).
-- One bridge per config entry; add the integration again for more buses.
+Know what a register means? Add it to a community map in [`community_maps/`](custom_components/modbus_tap/community_maps/) and open a pull request. Mark each entry `documented` (with its source) or `verified` (with the device and firmware you checked it on). Guesses are welcome too: leave both out. See [AGENTS.md](AGENTS.md) for code conventions.
 
 ## License
 

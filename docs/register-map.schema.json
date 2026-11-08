@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/janjouketjalsma/modbus-tap/blob/main/docs/register-map.schema.json",
+  "title": "Modbus Tap register map",
+  "description": "A list of sensors in the Home Assistant core Modbus sensor format, plus Modbus Tap's documented/verified/model keys. Community map files wrap the list in an object with name, manufacturer, match and sensors.",
+  "oneOf": [
+    { "$ref": "#/$defs/sensors" },
+    { "$ref": "#/$defs/communityMap" }
+  ],
+  "$defs": {
+    "communityMap": {
+      "type": "object",
+      "required": ["name", "manufacturer", "sensors"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "manufacturer": { "type": "string" },
+        "match": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "model_text": { "type": "string", "description": "Regular expression matched against the register marked model: true." },
+            "reads": {
+              "type": "array",
+              "items": { "type": "string", "pattern": "^(holding|input|coil|discrete_input) \\d+-\\d+$" },
+              "description": "Register blocks the usual poller reads, like 'input 1-100'."
+            }
+          }
+        },
+        "sensors": { "$ref": "#/$defs/sensors" }
+      }
+    },
+    "sensors": { "type": "array", "items": { "$ref": "#/$defs/sensor" } },
+    "address": {
+      "oneOf": [
+        { "type": "integer", "minimum": 0, "maximum": 65535 },
+        { "type": "string", "pattern": "^(0x[0-9a-fA-F]+|\\d+)$" }
+      ]
+    },
+    "sensor": {
+      "type": "object",
+      "required": ["name", "address"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "address": { "$ref": "#/$defs/address" },
+        "device_address": { "type": "integer", "minimum": 0, "maximum": 247, "default": 1 },
+        "slave": { "type": "integer", "minimum": 0, "maximum": 247, "description": "Older name for device_address." },
+        "input_type": { "enum": ["holding", "input"], "default": "holding" },
+        "data_type": {
+          "enum": ["int16", "int32", "int64", "uint16", "uint32", "uint64", "float16", "float32", "float64", "string"],
+          "default": "int16"
+        },
+        "count": { "type": "integer", "minimum": 1, "description": "Registers; required for strings." },
+        "swap": { "enum": ["none", "byte", "word", "word_byte"], "default": "none" },
+        "scale": { "type": "number", "default": 1 },
+        "offset": { "type": "number", "default": 0 },
+        "precision": { "type": "integer", "minimum": 0 },
+        "nan_value": { "type": "integer" },
+        "min_value": { "type": "number" },
+        "max_value": { "type": "number" },
+        "zero_suppress": { "type": "number" },
+        "unit_of_measurement": { "type": "string" },
+        "device_class": { "type": "string" },
+        "state_class": { "enum": ["measurement", "total", "total_increasing", "measurement_angle"] },
+        "scan_interval": { "type": "integer", "description": "Ignored by Modbus Tap; kept for core compatibility." },
+        "unique_id": { "type": "string", "description": "Ignored by Modbus Tap; kept for core compatibility." },
+        "documented": { "type": "string", "description": "Source of this entry, such as a protocol document and section." },
+        "verified": { "type": "string", "description": "Device model and firmware this entry was checked on." },
+        "model": { "type": "boolean", "description": "This string register holds the unit's model." }
+      },
+      "allOf": [
+        { "if": { "properties": { "data_type": { "const": "string" } }, "required": ["data_type"] }, "then": { "required": ["count"] } },
+        { "if": { "properties": { "model": { "const": true } }, "required": ["model"] }, "then": { "properties": { "data_type": { "const": "string" } }, "required": ["data_type"] } },
+        { "not": { "required": ["device_address", "slave"] } }
+      ]
+    }
+  }
+}

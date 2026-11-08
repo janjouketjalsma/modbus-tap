@@ -85,3 +85,20 @@ def test_suggestion_by_read_pattern():
     store.apply(read(2, Table.INPUT, 1, [0] * 100), now=1.0)
     assert suggest([community], 2, store.values, store.reads[2]) is community
     assert suggest([community], 2, store.values, set()) is None
+
+
+def test_bundled_maps_parse_and_match_the_schema():
+    import json
+    from pathlib import Path
+
+    import pytest
+    import yaml
+
+    from tap.community import MAPS_DIR, load_maps
+
+    maps = load_maps()
+    assert {"sosen_sse_hh6k", "chint_ddsu666"} <= set(maps)
+    jsonschema = pytest.importorskip("jsonschema")
+    schema = json.loads((Path(__file__).parents[1] / "docs" / "register-map.schema.json").read_text())
+    for path in MAPS_DIR.glob("*.yaml"):
+        jsonschema.validate(yaml.safe_load(path.read_text()), schema)
