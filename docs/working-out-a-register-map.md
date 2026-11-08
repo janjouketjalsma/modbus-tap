@@ -69,3 +69,9 @@ entry.
 ```
 
 Check the result against your reference values before trusting it.
+
+## Next
+
+- [Register maps](register-maps.md): every key in the format
+- [Recording format](recording-format.md): the file, field by field
+- [Contributing](../CONTRIBUTING.md): share your map

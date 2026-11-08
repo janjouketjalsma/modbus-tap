@@ -56,3 +56,7 @@ The state of a reference entity, at the start and whenever it changes.
 ```
 
 `reason` is `stopped`, `time limit reached` or `unloaded`. A file without an `end` line was cut short, for example by a restart.
+
+## See also
+
+[Working out a register map](working-out-a-register-map.md): how to use a recording.

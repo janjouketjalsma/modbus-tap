@@ -67,3 +67,7 @@ sensors:
 ```
 
 Use `device_address` 1 in community maps. Modbus Tap moves entries to whichever unit you pick. The schema is in [register-map.schema.json](register-map.schema.json).
+
+## Next
+
+Don't know what your registers mean? [Working out a register map](working-out-a-register-map.md). Map complete and want Home Assistant to poll directly? [Replacing your poller](replacing-your-poller.md).

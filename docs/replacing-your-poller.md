@@ -41,3 +41,8 @@ The old poller may have done more than read. On a Sosen inverter, for example, a
 ## 4. Modbus Tap afterwards
 
 Remove the Modbus Tap integration, or keep it listening. Home Assistant is now the poller, so Modbus Tap will see its requests. That's handy for checking core's traffic, or for recording a register you add later. If you keep both, make sure the bridge accepts two clients.
+
+## See also
+
+- [Register maps](register-maps.md)
+- [Home Assistant Modbus integration](https://www.home-assistant.io/integrations/modbus/)

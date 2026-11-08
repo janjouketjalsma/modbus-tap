@@ -97,3 +97,7 @@ Modbus Tap raises a repair in Home Assistant when it recognises one of these pat
 | Frames decode but some are garbled | Weak signal or noise | Shorten the tap, twist the data pair, connect ground |
 | Bridge connection fails | Address, or the bridge refuses another client | Check the IP and port, and the bridge's client limit |
 | The existing logger stopped working | Your wiring interferes with the bus | Disconnect the tap at once and recheck the pin mapping |
+
+## Next
+
+Your bus is decoding? Give the registers names: [Register maps](register-maps.md). No documentation for your device? [Working out a register map](working-out-a-register-map.md).

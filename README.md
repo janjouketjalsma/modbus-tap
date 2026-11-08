@@ -2,19 +2,16 @@
 
 ![Modbus Tap icon](custom_components/modbus_tap/brand/icon.png)
 
-Listen in on a Modbus RTU bus that's already in use, and turn what goes past into Home Assistant sensors. **Modbus Tap never transmits.** Your inverter's logger, dongle or meter keeps working exactly as before.
+Listen in on a Modbus RTU bus that's already in use, and turn what goes past into Home Assistant sensors. **Modbus Tap never transmits**, so your inverter's logger, dongle or meter keeps working exactly as before.
 
-It's for buses that already have a poller, such as a solar inverter with a vendor Wi-Fi dongle or a heat pump with its own controller. Polling them yourself would make a second master and risk collisions. Modbus Tap just listens.
+## Getting started
 
-## What you get
-
-- **Plug-in setup:** add the integration, enter your RS485 bridge's address, done.
-- **One device per unit:** every Modbus unit on the bus shows up as its own device.
-- **Core Modbus register maps:** existing core Modbus sensor YAML pastes right in.
-- **Community maps:** ready-made maps you can use as a base and correct where needed. Modbus Tap suggests one when your device matches.
-- **Recordings:** a timestamped log of all bus traffic, alongside other Home Assistant values and your own notes. That's everything you need to work out an unknown register map, with or without an AI assistant.
-- **Writes:** see what the poller writes, and whether the device accepted it. Optionally, you also get an event for each write.
-- **Export to core Modbus:** ready to replace the vendor dongle? Export your map as `modbus:` YAML.
+1. **Tap the bus.** Connect a network RS485 bridge (such as an Elfin EW11) to your bus, next to the device that's already polling it. 👉 [Tapping your bus](docs/tapping-your-bus.md) covers finding the pins with a multimeter, building a tap cable and the bridge settings.
+2. **Install Modbus Tap.** In Home Assistant, open **Settings → Marketplace** (HACS before 2026.11), choose **Add from link** and paste `https://github.com/janjouketjalsma/modbus-tap`. Install **Modbus Tap**.
+3. **Add the integration.** **Settings → Devices & services → Add integration → Modbus Tap**, then enter the bridge's IP address and port (8899 on Elfin devices).
+4. **Check it hears the bus.** On the new bridge device, **Connection** shows *Connected* and **Frames decoded** climbs each time your logger polls. Stuck? See [troubleshooting](docs/tapping-your-bus.md#troubleshooting).
+5. **Give your registers names.** Each unit on the bus appears as a device. If Modbus Tap recognises it, you'll get a repair suggesting a community map; accept it and the sensors appear. Otherwise, add your own under **Configure → Register maps**. 👉 [Register maps](docs/register-maps.md)
+6. **Don't know the registers?** Record a few hours of traffic next to values you already have, and work them out yourself or with an AI assistant. 👉 [Working out a register map](docs/working-out-a-register-map.md)
 
 ## How it compares
 
@@ -31,27 +28,13 @@ It's for buses that already have a poller, such as a solar inverter with a vendo
 
 ¹ In development: [esphome/esphome#19450](https://github.com/esphome/esphome/pull/19450)
 
-## Install
-
-1. In Home Assistant, open **Settings → Marketplace** (HACS before 2026.11), choose **Add from link** and paste `https://github.com/janjouketjalsma/modbus-tap`.
-2. Install **Modbus Tap**.
-3. **Settings → Devices & services → Add integration → Modbus Tap**, and enter your bridge's address and port.
-
 ## Docs
 
-| Guide | For |
-|---|---|
-| [Tapping your bus](docs/tapping-your-bus.md) | Finding the pins with a multimeter, building a tap cable, wiring and setting up the bridge, troubleshooting |
-| [Register maps](docs/register-maps.md) | The map format, community maps and overrides, documented and verified |
-| [Working out a register map](docs/working-out-a-register-map.md) | Recordings, diagnostics and an AI-ready method and prompt |
-| [Recording format](docs/recording-format.md) | The file format, for scripts and assistants |
-| [Replacing your poller](docs/replacing-your-poller.md) | Moving to core Modbus once your map is complete |
-| [Decisions](docs/adr/) and [glossary](GLOSSARY.md) | Why things are the way they are, and what the words mean |
+- [Tapping your bus](docs/tapping-your-bus.md): hardware, wiring, bridge settings, troubleshooting
+- [Register maps](docs/register-maps.md): the format, community maps, overrides
+- [Working out a register map](docs/working-out-a-register-map.md): recordings, diagnostics, AI prompt
+- [Features](docs/features.md): everything Modbus Tap does, in one page
+- [Replacing your poller](docs/replacing-your-poller.md): moving to core Modbus
+- [More](docs/README.md): recording format, decisions, glossary, contributing
 
-## Contributing
-
-Know what a register means? Add it to a community map in [`community_maps/`](custom_components/modbus_tap/community_maps/) and open a pull request. Mark each entry `documented` (with its source) or `verified` (with the device and firmware you checked it on). Guesses are welcome too: leave both out. See [AGENTS.md](AGENTS.md) for code conventions.
-
-## License
-
-MIT
+MIT licensed. Contributions welcome, especially register maps: see [CONTRIBUTING.md](CONTRIBUTING.md).
