@@ -10,7 +10,8 @@ Thanks for helping out! The most valuable contribution is a register map for a d
    - `documented: "<source>"` only when you took it from a written source. Name the document and section.
    - `verified: "<model>, firmware <version>"` only when you checked it against a real value on that device.
    - Neither, if it's a good guess. Guesses are welcome, and someone else can verify them later.
-4. Run `pytest tests` (it checks every map against the schema) and open a pull request.
+4. Add a line to [CHANGELOG.md](CHANGELOG.md) under `Unreleased`. If you change an existing entry's address, type or scale, mark it **⚠️ Breaking** ([why](docs/versioning.md)).
+5. Run `pytest tests` (it checks every map against the schema) and open a pull request.
 
 Never include serial numbers or other details that identify your own installation.
 

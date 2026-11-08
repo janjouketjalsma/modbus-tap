@@ -11,6 +11,7 @@
 
 - [Features](features.md): everything Modbus Tap does
 - [Recording format](recording-format.md): the file format, for scripts and assistants
+- [Versioning](versioning.md) and [changelog](../CHANGELOG.md): what's new, and what counts as breaking
 - [Register map schema](register-map.schema.json): JSON Schema for maps and community map files
 - [Glossary](../GLOSSARY.md): what the words mean
 - [Decisions](adr/): why things are the way they are

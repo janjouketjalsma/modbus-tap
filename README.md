@@ -35,6 +35,7 @@ Listen in on a Modbus RTU bus that's already in use, and turn what goes past int
 - [Working out a register map](docs/working-out-a-register-map.md): recordings, diagnostics, AI prompt
 - [Features](docs/features.md): everything Modbus Tap does, in one page
 - [Replacing your poller](docs/replacing-your-poller.md): moving to core Modbus
-- [More](docs/README.md): recording format, decisions, glossary, contributing
+- [Changelog](CHANGELOG.md): what's new in each version, and what's breaking
+- [More](docs/README.md): recording format, versioning, decisions, glossary, contributing
 
 MIT licensed. Contributions welcome, especially register maps: see [CONTRIBUTING.md](CONTRIBUTING.md).

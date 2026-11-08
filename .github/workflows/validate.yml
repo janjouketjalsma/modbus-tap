@@ -18,3 +18,13 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
+
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Manifest version is semver and listed in the changelog
+        run: |
+          version=$(python3 -c "import json;print(json.load(open('custom_components/modbus_tap/manifest.json'))['version'])")
+          echo "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'
+          grep -q "^## \[$version\]" CHANGELOG.md

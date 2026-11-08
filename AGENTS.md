@@ -40,6 +40,10 @@ Notes for anyone changing this repository, human or AI assistant.
 
 README, docs and UI text: upbeat, direct, no fluff. Short sentences, concrete steps, plain words. Safety warnings stay prominent in the hardware guide.
 
+## Changes and versions
+
+Add every user-visible change to `CHANGELOG.md` under `Unreleased`, and mark breaking ones with **⚠️ Breaking**. What counts as breaking, and how releases work, is in [docs/versioning.md](docs/versioning.md). Bump the manifest version only when releasing.
+
 ## Checks
 
 `pytest tests` must pass locally. GitHub Actions also runs the Home Assistant tests, hassfest and the HACS validation.
