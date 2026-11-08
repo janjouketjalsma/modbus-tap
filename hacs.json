@@ -1,0 +1,5 @@
+{
+  "name": "Modbus Sniffer",
+  "homeassistant": "2025.2.0",
+  "render_readme": true
+}
