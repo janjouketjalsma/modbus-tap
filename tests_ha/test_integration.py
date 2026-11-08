@@ -11,8 +11,8 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.modbus_sniffer.const import CONF_RAW_SENSORS, CONF_REGISTER_MAP, DOMAIN
-from custom_components.modbus_sniffer.rtu import crc16
+from custom_components.modbus_tap.const import CONF_RAW_SENSORS, CONF_REGISTER_MAP, DOMAIN
+from custom_components.modbus_tap.rtu import crc16
 
 MAP = """
 - name: Grid voltage
@@ -116,15 +116,15 @@ async def test_config_flow(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
     assert result["type"] is FlowResultType.FORM
 
-    with patch("custom_components.modbus_sniffer.config_flow._can_connect", return_value=False):
+    with patch("custom_components.modbus_tap.config_flow._can_connect", return_value=False):
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {CONF_HOST: "192.168.1.120", CONF_PORT: 8899}
         )
     assert result["errors"] == {"base": "cannot_connect"}
 
     with (
-        patch("custom_components.modbus_sniffer.config_flow._can_connect", return_value=True),
-        patch("custom_components.modbus_sniffer.async_setup_entry", return_value=True),
+        patch("custom_components.modbus_tap.config_flow._can_connect", return_value=True),
+        patch("custom_components.modbus_tap.async_setup_entry", return_value=True),
     ):
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {CONF_HOST: "192.168.1.120", CONF_PORT: 8899}
@@ -140,7 +140,7 @@ async def test_options_flow_rejects_bad_map(hass: HomeAssistant) -> None:
         options={CONF_RAW_SENSORS: True, CONF_REGISTER_MAP: ""},
     )
     entry.add_to_hass(hass)
-    with patch("custom_components.modbus_sniffer.async_setup_entry", return_value=True):
+    with patch("custom_components.modbus_tap.async_setup_entry", return_value=True):
         result = await hass.config_entries.options.async_init(entry.entry_id)
         result = await hass.config_entries.options.async_configure(
             result["flow_id"], {CONF_RAW_SENSORS: True, CONF_REGISTER_MAP: "- name: x"}

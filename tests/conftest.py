@@ -4,7 +4,7 @@ import sys
 import types
 from pathlib import Path
 
-PKG_DIR = Path(__file__).parents[1] / "custom_components" / "modbus_sniffer"
+PKG_DIR = Path(__file__).parents[1] / "custom_components" / "modbus_tap"
 
 # A bare package object, so `from .rtu import ...` works inside regmap.py
 # without executing __init__.py (which imports Home Assistant).

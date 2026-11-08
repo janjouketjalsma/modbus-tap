@@ -1,4 +1,4 @@
-"""Config and options flow for Modbus Sniffer."""
+"""Config and options flow for Modbus Tap."""
 
 from __future__ import annotations
 

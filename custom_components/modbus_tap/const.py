@@ -1,6 +1,6 @@
-"""Constants for the Modbus Sniffer integration."""
+"""Constants for the Modbus Tap integration."""
 
-DOMAIN = "modbus_sniffer"
+DOMAIN = "modbus_tap"
 
 DEFAULT_PORT = 8899
 

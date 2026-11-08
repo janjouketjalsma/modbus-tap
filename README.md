@@ -1,4 +1,4 @@
-# Modbus Sniffer for Home Assistant
+# Modbus Tap for Home Assistant
 
 Listen in on an existing Modbus RTU (RS485) bus and turn the values that go
 past into Home Assistant sensors, **without ever transmitting on the bus**.
@@ -38,8 +38,8 @@ for them.
 
 1. HACS → three dots → **Custom repositories** → add this repository's URL
    with type **Integration**.
-2. Install **Modbus Sniffer** and restart Home Assistant.
-3. **Settings → Devices & services → Add integration → Modbus Sniffer**, and
+2. Install **Modbus Tap** and restart Home Assistant.
+3. **Settings → Devices & services → Add integration → Modbus Tap**, and
    enter the bridge's IP address and port (8899 by default on Elfin devices).
 
 ## Bridge settings (Elfin EW11 and similar)
@@ -72,7 +72,7 @@ Check the **Frames decoded** and **Bytes discarded** status sensors:
 
 ## Register map
 
-**Settings → Devices & services → Modbus Sniffer → Configure.** The map is a
+**Settings → Devices & services → Modbus Tap → Configure.** The map is a
 YAML list:
 
 ```yaml

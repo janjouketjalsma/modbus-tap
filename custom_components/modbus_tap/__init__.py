@@ -1,4 +1,4 @@
-"""Modbus Sniffer: passively decode a Modbus RTU bus into Home Assistant sensors."""
+"""Modbus Tap: passively decode a Modbus RTU bus into Home Assistant sensors."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: SnifferConfigEntry) -> b
     # Entities subscribe to the hub before it starts receiving data.
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    entry.async_create_background_task(hass, hub.run(), f"modbus_sniffer {entry.title}")
+    entry.async_create_background_task(hass, hub.run(), f"modbus_tap {entry.title}")
     entry.async_on_unload(hub.stop)
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
     return True

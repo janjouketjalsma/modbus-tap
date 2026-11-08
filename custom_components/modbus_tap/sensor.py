@@ -1,4 +1,4 @@
-"""Sensors for Modbus Sniffer."""
+"""Sensors for Modbus Tap."""
 
 from __future__ import annotations
 
@@ -29,8 +29,8 @@ async def async_setup_entry(
     hub = entry.runtime_data
     device = DeviceInfo(
         identifiers={(DOMAIN, entry.entry_id)},
-        name=f"Modbus sniffer {entry.title}",
-        manufacturer="Modbus Sniffer",
+        name=f"Modbus Tap {entry.title}",
+        manufacturer="Modbus Tap",
         model="Passive Modbus RTU listener",
     )
 
