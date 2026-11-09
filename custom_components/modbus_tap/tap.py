@@ -271,7 +271,9 @@ class Tap:
             self.hass,
             f"Recording **{session.name}** finished ({reason}).\n\n"
             f"[Download it]({self.download_url(session.name)}) (link valid for one hour), or find it later under "
-            f"**Settings → Devices & services → Modbus Tap → Configure → Recordings → Download or delete recordings**.",
+            f"**Settings → Devices & services → Modbus Tap → Configure → Recordings → Download or delete recordings**.\n\n"
+            f"Next: turn it into a register map, yourself or with an AI assistant, and paste the result under "
+            f"**Configure → Sensors**. [How]({RECORDINGS_GUIDE}#how-it-fits-together)",
             title="Modbus Tap recording finished",
             notification_id=f"{DOMAIN}_{self.entry.entry_id}_recording",
         )

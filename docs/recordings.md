@@ -2,6 +2,18 @@
 
 A recording logs everything that happens on the bus, timestamped, together with values from other sources you already trust and notes you add. It's the raw material for [working out a register map](working-out-a-register-map.md).
 
+## How it fits together
+
+A recording is **just a file**. It doesn't change your sensors and doesn't create a register map by itself. The full path looks like this:
+
+1. **Record** a few hours, with reference sources set (below).
+2. **Download** the file.
+3. **Turn it into a register map:** hand it to an AI assistant with [the prompt](working-out-a-register-map.md#prompt-for-an-ai-assistant), or work through it yourself with [the method](working-out-a-register-map.md#2-analyse). The result is a block of YAML.
+4. **Paste the YAML** into **Configure → Sensors**, pick the unit, and put it under **Your entries**. The sensors appear.
+5. **Compare** them with your reference values for a day and fix what's off.
+
+Doing the analysis inside Home Assistant (with its AI Task feature) is planned for a later version.
+
 ## 1. Choose your reference sources
 
 Reference sources are your answer key: values Modbus Tap writes into the recording next to the bus traffic, so registers can be matched against them. Set them once under **Configure → Recordings → Reference sources and storage** ([where's Configure?](finding-your-way.md#configure-the-settings-of-your-bus)):
@@ -33,6 +45,17 @@ The **Recording** sensor on the bridge device shows the name of the running reco
 Modbus Tap keeps your 20 most recent recordings by default; change this under **Configure → Recordings → Reference sources and storage**. The files are in your config folder under `modbus_tap/recordings/`, if you prefer the Samba or File editor add-on.
 
 What's inside a recording is described in [Recording format](recording-format.md).
+
+## Questions
+
+**Do I need to keep the reference sources set?**
+No. They're only used while recording. Once your register map works, clear them under **Configure → Recordings → Reference sources and storage**, or leave them. They cost nothing when you're not recording.
+
+**What if a reference device or entity becomes unavailable, or is removed?**
+Nothing breaks. Listening to the bus and your sensors don't depend on reference sources at all. During a recording, an unavailable entity is logged as `unavailable`, which an analysis simply skips. A removed device or entity, or a pattern that matches nothing, is skipped when the next recording starts.
+
+**Does a recording affect the bus or my sensors?**
+No. Recording only writes a file; Modbus Tap never transmits, recording or not.
 
 ## From automations and dashboards
 

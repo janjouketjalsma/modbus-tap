@@ -4,6 +4,12 @@ All notable changes to Modbus Tap. Versions follow [Semantic Versioning](https:/
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-11-09
+
+### Changed
+
+- Recordings explain what happens next: a recording is a file you turn into a register map and paste under Sensors; it doesn't create sensors by itself. Same in the docs, with answers about keeping reference sources and what happens when one becomes unavailable (nothing breaks).
+
 ## [0.4.1] - 2026-11-09
 
 ### Fixed
@@ -65,7 +71,8 @@ First release.
 - Diagnostics with every register heard and hints.
 - Export to core Modbus YAML.
 
-[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.3.0...v0.3.1

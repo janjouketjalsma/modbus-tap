@@ -62,7 +62,7 @@
       },
       "recordings": {
         "title": "Recordings",
-        "description": "{state} {sources}\n\nRecordings log all bus traffic next to values you already have, so you can work out what each register means. [Recordings guide]({docs})",
+        "description": "{state} {sources}\n\nA recording logs all bus traffic next to values you already have. It doesn't create sensors by itself: download it, turn it into a register map (yourself or with an AI assistant), then paste the map under **Sensors**. [How it works]({docs})",
         "menu_options": {
           "recording_control": "Start or stop a recording",
           "recording_sources": "Reference sources and storage",
@@ -82,7 +82,7 @@
       },
       "recording_sources": {
         "title": "Reference sources and storage",
-        "description": "Values logged next to the bus traffic in every recording: your answer key for matching registers. Changing these doesn't interrupt a running recording; it uses them from the next start. [Which to use?]({docs})",
+        "description": "Values logged next to the bus traffic in every recording: your answer key for matching registers. They're only used while recording, so you can clear them once your map works, and an unavailable or removed source never breaks anything. Changes apply from the next recording. [Which to use?]({docs})",
         "data": {
           "reference_devices": "Reference devices",
           "reference_patterns": "Reference entity patterns",
@@ -128,7 +128,7 @@
       "export_done": "Done.",
       "nothing_to_export": "No register maps yet. Set one up under Sensors first.",
       "recording_started": "Recording started. Stop it with the Stop recording button on the bridge device, or here.",
-      "recording_stopped": "Recording stopped. A notification links to the file."
+      "recording_stopped": "Recording stopped. A notification links to the file. Next: turn it into a register map (see the Recordings guide), then paste it under Sensors."
     }
   },
   "device": {

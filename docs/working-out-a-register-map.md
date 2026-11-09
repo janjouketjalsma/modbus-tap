@@ -2,6 +2,8 @@
 
 No documentation for your device? You can still work out what most registers mean. This is the method that worked on a real inverter, written for people and AI assistants alike.
 
+Modbus Tap doesn't do this analysis for you yet: you record, analyse the file (here, or with an AI assistant), and paste the resulting map back in. [How it fits together](recordings.md#how-it-fits-together).
+
 ## 1. Record
 
 Make a [recording](recordings.md) of a few hours with your reference sources set: the values you already have from somewhere else, such as your inverter's cloud integration or add-on. They're your answer key. Add notes for things they can't see ("kettle on").
