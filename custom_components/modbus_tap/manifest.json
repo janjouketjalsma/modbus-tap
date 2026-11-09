@@ -1,6 +1,9 @@
 {
   "domain": "modbus_tap",
   "name": "Modbus Tap",
+  "after_dependencies": [
+    "ai_task"
+  ],
   "categories": [
     "diy_makers"
   ],
@@ -17,5 +20,5 @@
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/janjouketjalsma/modbus-tap/issues",
   "requirements": [],
-  "version": "0.4.2"
+  "version": "0.5.0"
 }

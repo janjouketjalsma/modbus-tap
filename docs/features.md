@@ -32,6 +32,7 @@ All the details: [Recordings](recordings.md).
 - **Reference devices and entities:** log other Home Assistant values alongside the bus traffic. Pick a whole device, such as your inverter's cloud integration, or a pattern like `sensor.solarsynkv3_*`, to get all its sensors at once.
 - **Notes:** add your own with `modbus_tap.add_note` ("kettle on").
 - **Managed in Home Assistant:** start, stop, download and delete under **Configure → Recordings** ([where's Configure?](finding-your-way.md#configure-the-settings-of-your-bus)). Old ones are cleaned up automatically, and a notification links to each finished recording.
+- **Suggest a register map** from a recording: registers matched to your reference entities, with type and scale, ready to review and save. Optionally refined by an AI through Home Assistant's AI Task ([how](recordings.md#4-suggest-a-register-map)).
 - **Documented format** for scripts and AI assistants ([format](recording-format.md), [method and prompt](working-out-a-register-map.md)).
 
 ## Writes

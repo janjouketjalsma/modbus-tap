@@ -2,7 +2,7 @@
 
 No documentation for your device? You can still work out what most registers mean. This is the method that worked on a real inverter, written for people and AI assistants alike.
 
-Modbus Tap doesn't do this analysis for you yet: you record, analyse the file (here, or with an AI assistant), and paste the resulting map back in. [How it fits together](recordings.md#how-it-fits-together).
+Modbus Tap does the first part for you: **Configure → Recordings → Suggest a register map from a recording** matches registers against your reference entities ([how](recordings.md#4-suggest-a-register-map)). This page is for the rest: registers without a reference entity, or doing it all by hand or with an AI assistant of your choice.
 
 ## 1. Record
 

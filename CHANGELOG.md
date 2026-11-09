@@ -4,6 +4,14 @@ All notable changes to Modbus Tap. Versions follow [Semantic Versioning](https:/
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-09
+
+### Added
+
+- **Suggest a register map from a recording** (Configure → Recordings). Modbus Tap matches registers to your reference entities, works out data type and scale, and leaves out what your current map already has right. You review and edit the entries; saving adds them to the unit's own entries.
+  - Matches on correlation when reference entities changed often enough (marked `verified`), and on values when they changed only a few times, as cloud integrations that update every five minutes do in short recordings.
+  - Optional: pick an AI Task entity to have an AI refine the suggestion from a summary of the recording. If its answer isn't a valid map, you get Modbus Tap's own matches.
+
 ## [0.4.2] - 2026-11-09
 
 ### Changed
@@ -71,7 +79,8 @@ First release.
 - Diagnostics with every register heard and hints.
 - Export to core Modbus YAML.
 
-[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.3.1...v0.4.0

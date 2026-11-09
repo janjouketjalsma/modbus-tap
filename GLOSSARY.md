@@ -52,6 +52,14 @@ _Avoid_: Splitter, Y-cable, sniffer cable
 A time-stamped log of every decoded **Transaction** on a **Bus**, started and stopped by the user, used to work out what **Registers** mean.
 _Avoid_: Capture, dump, trace
 
+**Reference entity**:
+A Home Assistant entity whose values are logged in a **Recording** next to the bus traffic, as an answer key for what **Registers** mean.
+_Avoid_: Source sensor, ground truth
+
+**Suggestion**:
+**Register map** entries proposed from a **Recording** by matching **Registers** against **Reference entities**, reviewed by the user before they become **Overrides**.
+_Avoid_: Auto-map, detected map
+
 ### Meaning
 
 **Register map**:

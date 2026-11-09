@@ -12,12 +12,16 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 import probatio
+import yaml
 
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import selector
 
+from .ai import AI_TASK_DOMAIN, ai_task_entities, async_refine
+from .analysis import MIN_POINTS
 from .bridge import CONNECT_TIMEOUT
 from .const import (
     ATTR_HOURS,
@@ -38,12 +42,14 @@ from .const import (
 )
 from .community import suggest
 from .export import core_modbus_yaml
-from .register_map import RegisterMapError, parse_yaml
+from .register_map import RegisterMapError, merge_yaml, parse_yaml, to_core
 
 if TYPE_CHECKING:
     from .tap import Tap
 
 CONF_UNIT = "unit"
+CONF_RECORDING = "recording"
+CONF_AI_TASK = "ai_task"
 CONF_DELETE = "delete"
 NO_MAP = "none"
 
@@ -123,6 +129,8 @@ class ModbusTapOptionsFlow(OptionsFlow):
 
     def __init__(self) -> None:
         self._unit: int | None = None
+        self._analysis_task: asyncio.Task[None] | None = None
+        self._suggestion_result: tuple[str, list[str]] = ("", [])
 
     @property
     def _tap(self) -> Tap | None:
@@ -285,7 +293,7 @@ class ModbusTapOptionsFlow(OptionsFlow):
         )
         return self.async_show_menu(
             step_id="recordings",
-            menu_options=["recording_control", "recording_sources", "recording_files"],
+            menu_options=["recording_control", "recording_sources", "recording_files", "recording_analyse"],
             description_placeholders={"state": state, "sources": sources, "docs": f"{DOCS}/recordings.md"},
         )
 
@@ -367,6 +375,118 @@ class ModbusTapOptionsFlow(OptionsFlow):
             }
         )
         return self.async_show_form(step_id="recording_files", data_schema=schema, description_placeholders={"recordings": "\n".join(lines)})
+
+    # --- Suggest a register map from a recording -------------------------------------
+
+    async def async_step_recording_analyse(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        tap = self._tap
+        if tap is None:
+            return self.async_abort(reason="not_loaded")
+        recordings = await tap.async_recordings()
+        if not recordings:
+            return self.async_abort(reason="no_recordings")
+        if user_input is not None:
+            self._unit = int(user_input[CONF_UNIT])
+            self._analysis_task = self.hass.async_create_task(
+                self._async_suggest(user_input[CONF_RECORDING], self._unit, user_input.get(CONF_AI_TASK)),
+                eager_start=False,
+            )
+            return await self.async_step_analysing()
+        units = self._known_units() or [1]
+        ai_entities = ai_task_entities(self.hass)
+        fields: dict[Any, Any] = {
+            probatio.Required(CONF_RECORDING, default=recordings[0].name): selector.SelectSelector(
+                selector.SelectSelectorConfig(options=[info.name for info in recordings], mode=selector.SelectSelectorMode.DROPDOWN)
+            ),
+            probatio.Required(CONF_UNIT, default=str(units[0])): selector.SelectSelector(
+                selector.SelectSelectorConfig(options=[selector.SelectOptionDict(value=str(u), label=f"Unit {u}") for u in units])
+            ),
+        }
+        if ai_entities:
+            fields[probatio.Optional(CONF_AI_TASK)] = selector.EntitySelector(selector.EntitySelectorConfig(domain=AI_TASK_DOMAIN))
+        return self.async_show_form(
+            step_id="recording_analyse",
+            data_schema=probatio.Schema(fields),
+            description_placeholders={
+                "ai": "" if ai_entities else "Tip: with an AI Task set up in Home Assistant (for example through OpenAI, Google Gemini, Anthropic or Ollama), an AI can refine the suggestion too.",
+                "docs": f"{DOCS}/working-out-a-register-map.md",
+            },
+        )
+
+    async def async_step_analysing(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        if not self._analysis_task.done():
+            return self.async_show_progress(step_id="analysing", progress_action="analysing", progress_task=self._analysis_task)
+        return self.async_show_progress_done(next_step_id="suggestion")
+
+    async def _async_suggest(self, name: str, unit: int, ai_entity: str | None) -> None:
+        """Work out the suggestion; the outcome goes to self._suggestion_result for the next screen."""
+        tap = self._tap
+        assert tap is not None
+        current = tap.maps.get(unit, [])
+        notes: list[str] = []
+        try:
+            analysis = await tap.async_analyse(name)
+        except (OSError, ValueError) as err:
+            self._suggestion_result = ("", [f"Couldn't read {name}: {err}"])
+            return
+        found = analysis.matches.get(unit, [])
+        if found:
+            on_values = sum(1 for m in found if m.correlation is None)
+            notes.append(f"Matched **{len(found)}** registers to your reference entities" + (f" ({on_values} on a few values only)." if on_values else "."))
+        elif not analysis.references:
+            notes.append("This recording has no reference values, so there was nothing to match registers against. Set reference sources under **Reference sources and storage** and record again.")
+        else:
+            notes.append("No register clearly followed any of your reference entities.")
+        if confirmed := analysis.confirmed(unit, current):
+            notes.append(f"The recording backs up **{confirmed}** entries of the current map; those are left out below.")
+        if analysis.references and analysis.reference_points < MIN_POINTS:
+            notes.append(
+                f"Your reference entities changed only about {analysis.reference_points} times in this recording, so matches rest on a few values and stay unverified. "
+                "A recording of a few hours, while the sun and your appliances change things, gives stronger (verified) matches."
+            )
+        text = analysis.proposal_yaml(unit, current)
+        if ai_entity:
+            existing = yaml.safe_dump([to_core(e) for e in current], sort_keys=False, allow_unicode=True) if current else ""
+            try:
+                text = await async_refine(self.hass, ai_entity, analysis, unit, existing)
+                notes.append(f"Refined by the AI (`{ai_entity}`). Check its entries before saving: it can be wrong.")
+            except HomeAssistantError as err:
+                notes.append(f"The AI couldn't help ({err}). Showing Modbus Tap's own matches.")
+        self._suggestion_result = (text, notes)
+
+    async def async_step_suggestion(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        unit = self._unit or 1
+        text, notes = self._suggestion_result
+        errors: dict[str, str] = {}
+        error = ""
+        if user_input is not None:
+            try:
+                parse_yaml(user_input.get(CONF_OVERRIDES, ""))
+                units = dict(self.config_entry.options.get(CONF_UNITS, {}))
+                current = dict(units.get(str(unit), {}))
+                current[CONF_OVERRIDES] = merge_yaml(current.get(CONF_OVERRIDES, ""), user_input.get(CONF_OVERRIDES, ""))
+                current.setdefault(CONF_COMMUNITY_MAP, None)
+            except RegisterMapError as err:
+                errors[CONF_OVERRIDES] = "invalid_map"
+                error = str(err)
+            else:
+                units[str(unit)] = current
+                return self._save(**{CONF_UNITS: units})
+        if not text and user_input is None:
+            return self.async_abort(reason="nothing_suggested", description_placeholders={"notes": "\n\n".join(notes)})
+        schema = probatio.Schema(
+            {
+                probatio.Optional(CONF_OVERRIDES, description={"suggested_value": user_input.get(CONF_OVERRIDES) if user_input else text}): selector.TextSelector(
+                    selector.TextSelectorConfig(multiline=True)
+                )
+            }
+        )
+        return self.async_show_form(
+            step_id="suggestion",
+            data_schema=schema,
+            errors=errors,
+            description_placeholders={"unit": str(unit), "notes": "\n\n".join(notes), "error": error},
+        )
 
     # --- Export ----------------------------------------------------------------------
 

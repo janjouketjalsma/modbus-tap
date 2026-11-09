@@ -11,7 +11,7 @@ Listen in on a Modbus RTU bus that's already in use, and turn what goes past int
 3. **Add the integration.** **Settings → Devices & services → Add integration → Modbus Tap**, then enter the bridge's IP address and port (8899 on Elfin devices).
 4. **Check it hears the bus.** On the new bridge device, **Connection** shows *Connected* and **Frames decoded** climbs each time your logger polls. Stuck? See [troubleshooting](docs/tapping-your-bus.md#troubleshooting).
 5. **Give your registers names.** Each unit on the bus appears as a device. If Modbus Tap recognises it, you'll get a repair suggesting a community map; accept it and the sensors appear. Otherwise, open **Configure** on your bridge's entry in **Settings → Devices & services → Modbus Tap**, and choose **Sensors**. 👉 [Register maps](docs/register-maps.md), [where everything is](docs/finding-your-way.md)
-6. **Don't know the registers?** Record a few hours of traffic next to values you already have, such as your inverter's cloud integration or add-on, and work them out yourself or with an AI assistant. 👉 [Recordings](docs/recordings.md), [Working out a register map](docs/working-out-a-register-map.md)
+6. **Don't know the registers?** Record a few hours of traffic next to values you already have, such as your inverter's cloud integration or add-on. Modbus Tap then suggests a register map, optionally refined by an AI. 👉 [Recordings](docs/recordings.md), [Working out a register map](docs/working-out-a-register-map.md)
 
 ## How it compares
 

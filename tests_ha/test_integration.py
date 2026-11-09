@@ -322,3 +322,78 @@ async def test_options_recording_paths_do_not_interrupt(hass: HomeAssistant) -> 
     await tap.async_stop_recording()
     assert await hass.config_entries.async_unload(entry.entry_id)
     await bridge.stop()
+
+
+def write_recording(directory: Path, name: str) -> None:
+    """Unit 1 input 0 is PV power in W; a cloud sensor reports it alongside."""
+    records = [{"type": "header", "reference_entities": ["sensor.cloud_pv"]}]
+    for i in range(20):
+        pv = 1000 + 37 * i + (i % 3) * 11
+        records.append({"type": "transaction", "t": 100.0 + 10 * i, "unit": 1, "function": 4, "table": "input", "start": 0, "values": [pv, 7], "outcome": "answered"})
+        records.append({"type": "entity", "t": 101.0 + 10 * i, "entity_id": "sensor.cloud_pv", "state": str(pv), "unit_of_measurement": "W", "friendly_name": "Cloud PV"})
+    directory.mkdir(parents=True, exist_ok=True)
+    with gzip.open(directory / name, "wt") as file:
+        file.writelines(json.dumps(r) + "\n" for r in records)
+
+
+async def _suggest(hass: HomeAssistant, entry, **fields):
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"next_step_id": "recordings"})
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"next_step_id": "recording_analyse"})
+    assert result["step_id"] == "recording_analyse"
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"recording": "recording-1.jsonl.gz", "unit": "1", **fields})
+    if result["type"] is FlowResultType.SHOW_PROGRESS:
+        await hass.async_block_till_done()
+        result = await hass.config_entries.options.async_configure(result["flow_id"])
+    return result
+
+
+async def test_suggest_a_map_from_a_recording(hass: HomeAssistant) -> None:
+    bridge = FakeBridge()
+    entry = await setup_entry(hass, await bridge.start(), **{CONF_UNITS: {"1": {CONF_COMMUNITY_MAP: None, CONF_OVERRIDES: "# mine\n- name: Other\n  address: 9\n  input_type: input\n"}}})
+    write_recording(entry.runtime_data.library.directory, "recording-1.jsonl.gz")
+
+    result = await _suggest(hass, entry)
+    assert result["step_id"] == "suggestion"
+    proposed = result["data_schema"].schema
+    suggested = next(iter(proposed)).description["suggested_value"]
+    assert "name: Cloud PV" in suggested and "verified:" in suggested
+
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {CONF_OVERRIDES: suggested})
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    overrides = entry.options[CONF_UNITS]["1"][CONF_OVERRIDES]
+    assert overrides.startswith("# mine") and "Cloud PV" in overrides
+
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await bridge.stop()
+
+
+async def test_suggest_with_an_ai_and_its_failures(hass: HomeAssistant) -> None:
+    bridge = FakeBridge()
+    entry = await setup_entry(hass, await bridge.start(), **{CONF_UNITS: {"1": {CONF_COMMUNITY_MAP: None, CONF_OVERRIDES: ""}}})
+    write_recording(entry.runtime_data.library.directory, "recording-1.jsonl.gz")
+    hass.states.async_set("ai_task.helper", "unknown")
+
+    async def answer(hass, entity_id, analysis, unit, existing):
+        assert entity_id == "ai_task.helper" and '"unit":1' in analysis.summary(unit)
+        return "- name: Status\n  address: 1\n  input_type: input\n"
+
+    with patch("custom_components.modbus_tap.config_flow.async_refine", side_effect=answer):
+        result = await _suggest(hass, entry, ai_task="ai_task.helper")
+    suggested = next(iter(result["data_schema"].schema)).description["suggested_value"]
+    assert "name: Status" in suggested
+    assert "Refined by the AI" in result["description_placeholders"]["notes"]
+
+    from homeassistant.exceptions import HomeAssistantError
+
+    with patch("custom_components.modbus_tap.config_flow.async_refine", side_effect=HomeAssistantError("no answer")):
+        result = await _suggest(hass, entry, ai_task="ai_task.helper")
+    assert "Cloud PV" in next(iter(result["data_schema"].schema)).description["suggested_value"]
+    assert "couldn't help (no answer)" in result["description_placeholders"]["notes"]
+
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {CONF_OVERRIDES: "- name: [broken"})
+    assert result["errors"] == {CONF_OVERRIDES: "invalid_map"}
+
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await bridge.stop()

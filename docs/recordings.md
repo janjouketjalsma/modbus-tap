@@ -4,15 +4,14 @@ A recording logs everything that happens on the bus, timestamped, together with 
 
 ## How it fits together
 
-A recording is **just a file**. It doesn't change your sensors and doesn't create a register map by itself. The full path looks like this:
+A recording is **just a file**. It doesn't change your sensors by itself. The path from recording to sensors:
 
 1. **Record** a few hours, with reference sources set (below).
-2. **Download** the file.
-3. **Turn it into a register map:** hand it to an AI assistant with [the prompt](working-out-a-register-map.md#prompt-for-an-ai-assistant), or work through it yourself with [the method](working-out-a-register-map.md#2-analyse). The result is a block of YAML.
-4. **Paste the YAML** into **Configure → Sensors**, pick the unit, and put it under **Your entries**. The sensors appear.
-5. **Compare** them with your reference values for a day and fix what's off.
+2. **Suggest a register map:** **Configure → Recordings → Suggest a register map from a recording**. Modbus Tap finds the registers that follow your reference entities and works out their scale. Optionally, an AI refines it. [How it works](#4-suggest-a-register-map)
+3. **Review and save** the suggested entries. They're added to the unit's own entries and the sensors appear.
+4. **Compare** them with your reference values for a day and fix what's off.
 
-Doing the analysis inside Home Assistant (with its AI Task feature) is planned for a later version.
+Prefer to work it out yourself, or with an AI assistant outside Home Assistant? Download the file and follow [Working out a register map](working-out-a-register-map.md).
 
 ## 1. Choose your reference sources
 
@@ -46,7 +45,30 @@ Modbus Tap keeps your 20 most recent recordings by default; change this under **
 
 What's inside a recording is described in [Recording format](recording-format.md).
 
+## 4. Suggest a register map
+
+**Configure → Recordings → Suggest a register map from a recording.** Pick a recording and a unit. Modbus Tap then:
+
+- **Matches registers to reference entities.** For each reference entity, it looks for the register (or pair of registers, for 32-bit values) that follows it, and the scale that turns one into the other: ×0.1 for a voltage read as 2348, say.
+  - With enough values (6 or more changes per entity), it uses correlation. Close matches get `verified`, with the entity and recording as evidence.
+  - With only a few values, it matches the values themselves and leaves the entry unverified. Cloud integrations often update every five minutes, so a ten-minute recording gives each entity two or three values. Record a few hours for stronger matches.
+- **Leaves out what you already have right.** Entries your current map already has, with the same type and scale, are counted but not suggested again.
+- **Shows you the result** to edit. Submitting adds the entries to the unit's own entries: an entry at the same address replaces yours, everything else stays.
+
+Names, units and device classes come from the reference entities. Check them: a cloud integration's "PV Pac" is your call to rename.
+
+### Ask an AI too (optional)
+
+If you've set up an **AI Task** in Home Assistant (through OpenAI, Google Gemini, Anthropic, Ollama or another AI integration), pick it in the **Also ask an AI** field. The AI gets a summary of the recording, not the file: the registers that changed with sample values, text found, the reference entities and Modbus Tap's own matches. It can add what correlation can't find, such as counters, states and settings.
+
+Its answer has to be a valid register map; if it isn't, or the AI doesn't answer, you get Modbus Tap's own matches with a note. An AI can be confidently wrong, so treat its entries as guesses until they've matched your reference values for a while.
+
+The summary includes your reference entity IDs and values, and goes to whichever AI provider your AI Task uses.
+
 ## Questions
+
+**Does a recording create sensors by itself?**
+No. Use **Suggest a register map** (above), or work it out from the downloaded file. Nothing changes until you save.
 
 **Do I need to keep the reference sources set?**
 No. They're only used while recording. Once your register map works, clear them under **Configure → Recordings → Reference sources and storage**, or leave them. They cost nothing when you're not recording.
@@ -99,4 +121,4 @@ When you create these in the UI editor, the **Bus** field lets you pick your Mod
 
 ## Next
 
-[Working out a register map](working-out-a-register-map.md): turning a recording into a map.
+[Working out a register map](working-out-a-register-map.md): the method behind the suggestions, for doing it by hand or with an AI assistant.

@@ -14,7 +14,7 @@ The Configure menu opens with the current status (bridge connected, units heard,
 | Menu item | What it's for |
 |---|---|
 | **Sensors** | Pick a unit, choose a community map and add your own entries. The screen shows what the poller reads and suggests a matching map ([guide](register-maps.md)) |
-| **Recordings** | **Start or stop a recording**, **Reference sources and storage** (what to log next to the bus traffic, how many recordings to keep), **Download or delete recordings** ([guide](recordings.md)) |
+| **Recordings** | **Start or stop a recording**, **Reference sources and storage** (what to log next to the bus traffic, how many recordings to keep), **Download or delete recordings**, **Suggest a register map from a recording** ([guide](recordings.md)) |
 | **Export to core Modbus** | Get `modbus:` YAML for replacing your poller ([guide](replacing-your-poller.md)) |
 | **Advanced** | Write events |
 

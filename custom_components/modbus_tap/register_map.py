@@ -97,19 +97,38 @@ class ParsedMap:
 
 def parse_yaml(text: str | None) -> ParsedMap:
     """Parse a user's YAML list of core-style sensors."""
+    return parse_entries(_load_list(text))
+
+
+def merge_yaml(existing: str | None, additions: str | None) -> str:
+    """Add entries to a user's list; an added entry replaces one at the same slot.
+
+    Kept as text (comments and all) when nothing is replaced.
+    """
+    old, new = _load_list(existing), _load_list(additions)
+    if not new:
+        return existing or ""
+    replaced = {_parse_entry(item, "entry")[0].slot for item in new}
+    kept = [item for item in old if _parse_entry(item, "entry")[0].slot not in replaced]
+    if len(kept) == len(old) and not (existing and "sensors:" in existing):
+        return f"{existing.rstrip()}\n{additions.strip()}\n" if old else f"{additions.strip()}\n"
+    return yaml.safe_dump(kept + new, sort_keys=False, allow_unicode=True)
+
+
+def _load_list(text: str | None) -> list[Any]:
     if not text or not text.strip():
-        return ParsedMap((), ())
+        return []
     try:
         data = yaml.safe_load(text)
     except yaml.YAMLError as err:
         raise RegisterMapError(f"YAML error: {err}") from err
     if data is None:
-        return ParsedMap((), ())
+        return []
     if isinstance(data, dict) and "sensors" in data:
         data = data["sensors"]
     if not isinstance(data, list):
         raise RegisterMapError("expected a list of sensors, each starting with '- name:'")
-    return parse_entries(data)
+    return data
 
 
 def parse_entries(items: Iterable[Any]) -> ParsedMap:

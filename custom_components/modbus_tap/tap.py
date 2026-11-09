@@ -42,7 +42,8 @@ from .const import (
 from .entity import bridge_identifier, unit_identifier
 from .hints import bus_problem
 from .model import Transaction
-from .recording import Recording, RecordingInfo, RecordingLibrary
+from .analysis import Analysis, analyse
+from .recording import Recording, RecordingInfo, RecordingLibrary, read_records
 from .register_map import MapEntry, RegisterMapError, apply_overrides, parse_yaml, with_unit
 from .rtu import RtuDecoder
 from .session import RecordingSession
@@ -288,6 +289,16 @@ class Tap:
 
     async def async_recordings(self) -> list[RecordingInfo]:
         return await self.hass.async_add_executor_job(self.library.recordings)
+
+    async def async_analyse(self, name: str) -> Analysis:
+        """Match a Recording's Registers against its reference values (see analysis.py)."""
+
+        def run() -> Analysis:
+            if (path := self.library.path_of(name)) is None:
+                raise FileNotFoundError(name)
+            return analyse(name, read_records(path))
+
+        return await self.hass.async_add_executor_job(run)
 
     async def async_delete_recordings(self, names: list[str]) -> None:
         active = self.session.name if self.session else None

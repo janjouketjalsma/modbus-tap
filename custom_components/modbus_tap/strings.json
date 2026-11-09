@@ -62,11 +62,12 @@
       },
       "recordings": {
         "title": "Recordings",
-        "description": "{state} {sources}\n\nA recording logs all bus traffic next to values you already have. It doesn't create sensors by itself: download it, turn it into a register map (yourself or with an AI assistant), then paste the map under **Sensors**. [How it works]({docs})",
+        "description": "{state} {sources}\n\nA recording logs all bus traffic next to values you already have. It doesn't change your sensors by itself: use **Suggest a register map** to turn it into sensors, or download it and work it out yourself. [How it works]({docs})",
         "menu_options": {
           "recording_control": "Start or stop a recording",
           "recording_sources": "Reference sources and storage",
-          "recording_files": "Download or delete recordings"
+          "recording_files": "Download or delete recordings",
+          "recording_analyse": "Suggest a register map from a recording"
         }
       },
       "recording_start": {
@@ -103,6 +104,30 @@
           "delete": "Delete"
         }
       },
+      "recording_analyse": {
+        "title": "Suggest a register map",
+        "description": "Modbus Tap looks for registers that follow your reference entities in the recording, and works out their scale. You review the result before anything changes.\n\n{ai} [How matching works]({docs})",
+        "data": {
+          "recording": "Recording",
+          "unit": "Unit",
+          "ai_task": "Also ask an AI (optional)"
+        },
+        "data_description": {
+          "recording": "Newest first. A few hours with things changing works best.",
+          "unit": "The unit to suggest sensors for.",
+          "ai_task": "An AI Task entity. It gets a summary of the recording (no raw file) and may add registers Modbus Tap can't match on its own, such as counters and states."
+        }
+      },
+      "suggestion": {
+        "title": "Suggested sensors for unit {unit}",
+        "description": "{notes}\n\nEdit or remove entries below, then submit to add them to the unit's own entries. Entries at the same address are replaced; the rest of your map stays. Saving reloads Modbus Tap.",
+        "data": {
+          "overrides": "Suggested entries (YAML)"
+        },
+        "data_description": {
+          "overrides": "Entries with `verified` closely followed a reference entity. The others are guesses: compare them with your reference values for a day."
+        }
+      },
       "export": {
         "title": "Export to core Modbus",
         "description": "Ready to replace your poller? Paste this into `configuration.yaml`. It polls the same units through the same bridge, at the rate your poller used. [What else to check]({docs})\n\n```yaml\n{yaml}\n```"
@@ -128,7 +153,11 @@
       "export_done": "Done.",
       "nothing_to_export": "No register maps yet. Set one up under Sensors first.",
       "recording_started": "Recording started. Stop it with the Stop recording button on the bridge device, or here.",
-      "recording_stopped": "Recording stopped. A notification links to the file. Next: turn it into a register map (see the Recordings guide), then paste it under Sensors."
+      "recording_stopped": "Recording stopped. A notification links to the file. Next: turn it into a register map (see the Recordings guide), then paste it under Sensors.",
+      "nothing_suggested": "Nothing to suggest yet.\n\n{notes}"
+    },
+    "progress": {
+      "analysing": "Matching registers against your reference values. With an AI this can take a minute."
     }
   },
   "device": {
