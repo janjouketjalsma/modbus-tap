@@ -113,7 +113,8 @@ async def test_community_map_sensors_devices_and_listen_only(hass: HomeAssistant
     assert await wait_for(lambda: hass.states.get(voltage).state not in ("unknown", "unavailable"))
     assert float(hass.states.get(voltage).state) == pytest.approx(234.4)
     assert int(hass.states.get(power).state) == -204
-    assert hass.states.get(voltage).attributes["map_status"] == "guessed"
+    assert hass.states.get(voltage).attributes["map_status"] == "verified"
+    assert hass.states.get(power).attributes["map_status"] == "guessed"
 
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=31))
     await hass.async_block_till_done()
