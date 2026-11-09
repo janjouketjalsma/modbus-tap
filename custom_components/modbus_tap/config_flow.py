@@ -19,6 +19,7 @@ from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import selector
+from homeassistant.util import dt as dt_util
 
 from .ai import AI_TASK_DOMAIN, ai_task_entities, async_refine
 from .analysis import MIN_POINTS
@@ -50,6 +51,18 @@ if TYPE_CHECKING:
 CONF_UNIT = "unit"
 CONF_RECORDING = "recording"
 CONF_AI_TASK = "ai_task"
+CONF_CLEAR = "clear"
+WRITES_SHOWN = 20
+CHANGES_SHOWN = 15
+
+
+def _when(timestamp: float) -> str:
+    return dt_util.as_local(dt_util.utc_from_timestamp(timestamp)).strftime("%a %d %b %H:%M")
+
+
+def _values(values: tuple[int, ...], limit: int = 8) -> str:
+    shown = ", ".join(str(v) for v in values[:limit])
+    return shown + (", …" if len(values) > limit else "")
 CONF_DELETE = "delete"
 NO_MAP = "none"
 
@@ -174,7 +187,7 @@ class ModbusTapOptionsFlow(OptionsFlow):
             )
         return self.async_show_menu(
             step_id="init",
-            menu_options=["sensors", "recordings", "export", "advanced"],
+            menu_options=["sensors", "recordings", "writes", "export", "advanced"],
             description_placeholders={"status": status, "docs": DOCS},
         )
 
@@ -487,6 +500,54 @@ class ModbusTapOptionsFlow(OptionsFlow):
             errors=errors,
             description_placeholders={"unit": str(unit), "notes": "\n\n".join(notes), "error": error},
         )
+
+    # --- Writes -----------------------------------------------------------------------
+
+    async def async_step_writes(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        tap = self._tap
+        if tap is None:
+            return self.async_abort(reason="not_loaded")
+        if user_input is not None:
+            if user_input.get(CONF_CLEAR):
+                await tap.async_clear_writes()
+            return self.async_abort(reason="writes_cleared" if user_input.get(CONF_CLEAR) else "export_done")
+        blocks = tap.writes.newest_first()
+        if not blocks:
+            return self.async_abort(reason="no_writes")
+        rows = [
+            "| Unit | Registers | Writes | Values seen | Last written |",
+            "|---|---|---|---|---|",
+            *(
+                f"| {b.unit} | {b.table} {b.addresses}{self._names(tap, b)} | {b.total} | {b.distinct_values} | {_when(b.last)} |"
+                for b in blocks[:WRITES_SHOWN]
+            ),
+        ]
+        runs = sorted(((b, r) for b in blocks for r in b.runs), key=lambda item: item[1].first, reverse=True)[:CHANGES_SHOWN]
+        changes = [
+            f"- {_when(r.first)} · unit {b.unit} {b.table} {b.addresses} → `{_values(r.values)}`"
+            + (f" ({r.outcome})" if r.outcome != "confirmed" else "")
+            + (f", {r.count}× until {_when(r.last)}" if r.count > 1 else "")
+            for b, r in runs
+        ]
+        more = f"\n\nShowing the {WRITES_SHOWN} most recently written of {len(blocks)}." if len(blocks) > WRITES_SHOWN else ""
+        return self.async_show_form(
+            step_id="writes",
+            data_schema=probatio.Schema({probatio.Optional(CONF_CLEAR, default=False): selector.BooleanSelector()}),
+            description_placeholders={
+                "table": "\n".join(rows) + more,
+                "changes": "\n".join(changes),
+                "docs": f"{DOCS}/writes.md",
+            },
+        )
+
+    @staticmethod
+    def _names(tap: Tap, block) -> str:
+        names = [
+            e.name
+            for e in tap.maps.get(block.unit, [])
+            if e.table.value == block.table and block.start <= e.address < block.start + block.length
+        ]
+        return f" ({', '.join(names)})" if names else ""
 
     # --- Export ----------------------------------------------------------------------
 

@@ -19,6 +19,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.network import NoURLAvailableError, get_url
+from homeassistant.helpers.storage import Store
 
 from . import issues
 from .bridge import BridgeListener
@@ -49,12 +50,18 @@ from .rtu import RtuDecoder
 from .session import RecordingSession
 from .store import RegisterStore
 from .values import decode
+from .writes import WriteLog
 
 _LOGGER = logging.getLogger(__name__)
 
 TICK = timedelta(seconds=30)
 LINK_LIFETIME = timedelta(hours=1)
 REFERENCE_DOMAINS = frozenset({"sensor", "binary_sensor"})
+WRITES_SAVE_DELAY = 60  # seconds; writes come in bursts, so save at most once a minute
+
+
+def writes_store(hass: HomeAssistant, entry_id: str) -> Store[dict[str, Any]]:
+    return Store(hass, 1, f"{DOMAIN}.writes.{entry_id}")
 
 
 def unit_maps(options: Mapping[str, Any], community_maps: Mapping[str, CommunityMap]) -> dict[int, list[MapEntry]]:
@@ -87,6 +94,8 @@ class Tap:
         self._status_listeners: set[Callable[[], None]] = set()
         self._tick_listeners: set[Callable[[], None]] = set()
         self.models: dict[int, str] = {}
+        self.writes = WriteLog()
+        self._writes_store = writes_store(hass, entry.entry_id)
 
     # --- lifecycle ----------------------------------------------------------
 
@@ -107,9 +116,17 @@ class Tap:
         entry.async_create_background_task(self.hass, self.listener.run(), f"{DOMAIN} {entry.title}")
         entry.async_on_unload(self.listener.stop)
 
+    async def async_load(self) -> None:
+        self.writes = WriteLog.from_dict(await self._writes_store.async_load())
+
     async def async_shutdown(self) -> None:
         if self.session is not None:
             await self.async_stop_recording("unloaded")
+        await self._writes_store.async_save(self.writes.as_dict())
+
+    async def async_clear_writes(self) -> None:
+        self.writes.clear()
+        await self._writes_store.async_save(self.writes.as_dict())
 
     # --- bus traffic --------------------------------------------------------
 
@@ -121,6 +138,9 @@ class Tap:
             self.store.apply(tx, now)
             if self.session is not None:
                 self.session.transaction(now, tx)
+            if tx.is_write:
+                self.writes.add(tx, now)
+                self._writes_store.async_delay_save(self.writes.as_dict, WRITES_SAVE_DELAY)
             if fire_writes and tx.is_write:
                 self.hass.bus.async_fire(
                     EVENT_WRITE,

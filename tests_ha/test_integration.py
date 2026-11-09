@@ -397,3 +397,40 @@ async def test_suggest_with_an_ai_and_its_failures(hass: HomeAssistant) -> None:
 
     assert await hass.config_entries.async_unload(entry.entry_id)
     await bridge.stop()
+
+
+async def test_write_history_screen_persists_and_clears(hass: HomeAssistant, hass_storage) -> None:
+    bridge = FakeBridge()
+    entry = await setup_entry(hass, await bridge.start())
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"next_step_id": "writes"})
+    assert result["reason"] == "no_writes"
+
+    def write(values: list[int]) -> bytes:
+        payload = b"".join(v.to_bytes(2, "big") for v in values)
+        return with_crc(bytes([1, 16, 0x08, 0x06, 0, len(values), 2 * len(values)]) + payload) + with_crc(bytes([1, 16, 0x08, 0x06, 0, len(values)]))
+
+    for values in ([1, 2], [1, 2], [1, 3]):
+        await bridge.send(write(values))
+        await asyncio.sleep(0.4)
+    assert await wait_for(lambda: entry.runtime_data.writes.blocks and next(iter(entry.runtime_data.writes.blocks.values())).total == 3)
+
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    (block,) = entry.runtime_data.writes.newest_first()  # loaded back after the reload
+    assert (block.addresses, block.total, [r.count for r in block.runs]) == ("2054-2055", 3, [2, 1])
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"next_step_id": "writes"})
+    assert result["step_id"] == "writes"
+    assert "| 1 | holding 2054-2055 | 3 | 2 |" in result["description_placeholders"]["table"]
+    assert "→ `1, 3`" in result["description_placeholders"]["changes"]
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"clear": True})
+    assert result["reason"] == "writes_cleared"
+    assert entry.runtime_data.writes.blocks == {}
+
+    assert await hass.config_entries.async_remove(entry.entry_id)
+    await hass.async_block_till_done()
+    assert f"{DOMAIN}.writes.{entry.entry_id}" not in hass_storage
+    await bridge.stop()

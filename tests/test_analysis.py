@@ -105,3 +105,14 @@ def test_entries_the_current_map_already_has_right_are_left_out():
     assert result.confirmed(1, current) == 1
     names = [e.name for e in parse_yaml(result.proposal_yaml(1, current)).entries]
     assert names == ["Battery power", "Energy today"]  # address 1 had the wrong scale, so it's proposed
+
+
+def test_summary_lists_the_pollers_writes():
+    import json
+
+    records = _recording() + [
+        {"type": "transaction", "t": 2000.0, "unit": 1, "function": 16, "table": "holding", "start": 2054, "values": [1, 2], "outcome": "confirmed"},
+        {"type": "transaction", "t": 2300.0, "unit": 1, "function": 16, "table": "holding", "start": 2054, "values": [1, 2], "outcome": "confirmed"},
+    ]
+    data = json.loads(analyse("r.jsonl.gz", records).summary(1))
+    assert data["writes_by_the_poller"] == [{"table": "holding", "registers": "2054-2055", "times": 2, "values": [[[1, 2], "confirmed", 2]]}]

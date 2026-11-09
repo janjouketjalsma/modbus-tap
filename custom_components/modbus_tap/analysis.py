@@ -18,9 +18,10 @@ from typing import Any
 import yaml
 
 from .hints import find_strings, register_hints
-from .model import Table
+from .model import WRITE_FUNCTIONS, Outcome, Table, Transaction
 from .register_map import MapEntry
 from .store import RegisterState
+from .writes import WriteLog
 
 MIN_POINTS = 6
 MIN_CORRELATION = 0.9
@@ -118,6 +119,7 @@ class Analysis:
     references: dict[str, Reference]
     matches: dict[int, list[Match]]  # per unit
     units: list[int]
+    writes: WriteLog = field(default_factory=WriteLog)
 
     @property
     def reference_points(self) -> int:
@@ -163,6 +165,11 @@ class Analysis:
             ],
             "matches_found_by_correlation": [m.__dict__ | {"table": m.table.value} for m in self.matches.get(unit, [])],
             "text_found": find_strings(states),
+            "writes_by_the_poller": [
+                {"table": b.table, "registers": b.addresses, "times": b.total, "values": [[list(r.values), r.outcome, r.count] for r in b.runs[-10:]]}
+                for b in self.writes.newest_first()
+                if b.unit == unit
+            ],
             "constant_registers": sum(1 for s in states.values() if not s.changes),
             "changing_registers": registers,
         }
@@ -187,8 +194,14 @@ def _agrees(entry: dict[str, Any], current: Iterable[MapEntry]) -> bool:
 def analyse(recording: str, records: Iterable[dict[str, Any]]) -> Analysis:
     registers: dict[Key, Series] = {}
     references: dict[str, Reference] = {}
+    writes = WriteLog()
     for record in records:
         kind = record.get("type")
+        if kind == "transaction" and record.get("function") in WRITE_FUNCTIONS and record.get("table"):
+            writes.add(
+                Transaction(record["unit"], record["function"], Table(record["table"]), record["start"], tuple(record["values"]), Outcome(record["outcome"])),
+                record["t"],
+            )
         if kind == "transaction" and record.get("outcome") in ("answered", "confirmed") and record.get("table"):
             table = Table(record["table"])
             for offset, value in enumerate(record["values"]):
@@ -207,7 +220,7 @@ def analyse(recording: str, records: Iterable[dict[str, Any]]) -> Analysis:
             ref.series.add(record["t"], value)
     units = sorted({key[0] for key in registers})
     matches = {unit: _match_unit(unit, registers, references) for unit in units}
-    return Analysis(recording, registers, references, matches, units)
+    return Analysis(recording, registers, references, matches, units, writes)
 
 
 def _match_unit(unit: int, registers: dict[Key, Series], references: dict[str, Reference]) -> list[Match]:

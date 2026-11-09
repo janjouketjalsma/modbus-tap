@@ -13,7 +13,7 @@ from .community import CommunityMap, load_maps
 from .const import CONF_UNITS, DOMAIN
 from .download import RecordingDownloadView
 from .services import async_setup_services
-from .tap import Tap
+from .tap import Tap, writes_store
 
 PLATFORMS = [Platform.BUTTON, Platform.SENSOR]
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -31,6 +31,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: TapConfigEntry) -> bool:
     tap = Tap(hass, entry, hass.data[COMMUNITY_MAPS])
+    await tap.async_load()
     entry.runtime_data = tap
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     tap.start()  # after the platforms, so entities hear the first frames
@@ -42,6 +43,11 @@ async def _async_options_updated(hass: HomeAssistant, entry: TapConfigEntry) -> 
     """Reload only when register maps change; other options are read live, so a running recording survives."""
     if dict(entry.options.get(CONF_UNITS, {})) != entry.runtime_data.units_config:
         await hass.config_entries.async_reload(entry.entry_id)
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: TapConfigEntry) -> None:
+    """Remove the write log with the entry. (Recordings stay: they're the user's files.)"""
+    await writes_store(hass, entry.entry_id).async_remove()
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: TapConfigEntry) -> bool:

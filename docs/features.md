@@ -38,6 +38,7 @@ All the details: [Recordings](recordings.md).
 ## Writes
 
 - **Values the poller writes** update the register once the unit confirms them. Rejected and unanswered writes are ignored.
+- **Write history** under **Configure → Writes**: which registers the poller writes, how often, and every change in value, kept across restarts. Repeats are collapsed and the history is capped, so it stays small ([details](writes.md)).
 - **Optional `modbus_tap_write` event** for each write, with the outcome (`confirmed`, `rejected`, `unanswered`). Turn it on under **Configure → Advanced**.
 
 ## Help when things go wrong

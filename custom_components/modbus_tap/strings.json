@@ -37,6 +37,7 @@
         "menu_options": {
           "sensors": "Sensors: name the registers of a unit",
           "recordings": "Recordings: record, reference sources, downloads",
+          "writes": "Writes: what the poller changes on your devices",
           "export": "Export to core Modbus",
           "advanced": "Advanced"
         }
@@ -128,6 +129,16 @@
           "overrides": "Entries with `verified` closely followed a reference entity. The others are guesses: compare them with your reference values for a day."
         }
       },
+      "writes": {
+        "title": "Writes",
+        "description": "What the poller has written, kept across restarts. Repeated writes of the same values count as one change, and the history is capped (100 register blocks, 50 changes each), so it stays small.\n\n{table}\n\n**Latest changes**\n{changes}\n\nWhat the values mean: see a recording's reference values around the same time, or map the registers under **Sensors**. [About writes]({docs})",
+        "data": {
+          "clear": "Clear the history"
+        },
+        "data_description": {
+          "clear": "Starts the history afresh. Leave off to just close this screen."
+        }
+      },
       "export": {
         "title": "Export to core Modbus",
         "description": "Ready to replace your poller? Paste this into `configuration.yaml`. It polls the same units through the same bridge, at the rate your poller used. [What else to check]({docs})\n\n```yaml\n{yaml}\n```"
@@ -154,7 +165,9 @@
       "nothing_to_export": "No register maps yet. Set one up under Sensors first.",
       "recording_started": "Recording started. Stop it with the Stop recording button on the bridge device, or here.",
       "recording_stopped": "Recording stopped. A notification links to the file. Next: turn it into a register map (see the Recordings guide), then paste it under Sensors.",
-      "nothing_suggested": "Nothing to suggest yet.\n\n{notes}"
+      "nothing_suggested": "Nothing to suggest yet.\n\n{notes}",
+      "no_writes": "The poller hasn't written anything since Modbus Tap started keeping track. Many pollers only read; others write every few minutes or only when a setting changes.",
+      "writes_cleared": "Write history cleared."
     },
     "progress": {
       "analysing": "Matching registers against your reference values. With an AI this can take a minute."

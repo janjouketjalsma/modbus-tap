@@ -18,7 +18,9 @@ You are helping map the registers of a Modbus device (unit {unit}) for Home Assi
 Below is a JSON summary of a recording: the registers the device was polled for,
 how their values moved, and reference entities (values from another source, such
 as the manufacturer's cloud) logged at the same time. Cloud values can lag the bus
-by several minutes. "matches_found_by_correlation" lists registers already matched
+by several minutes. "writes_by_the_poller" lists what the poller wrote; those
+registers are usually settings, so name them as such if you can tell what they are.
+"matches_found_by_correlation" lists registers already matched
 to a reference entity by Modbus Tap; keep them unless the data clearly contradicts them.
 
 Return a register map in the Home Assistant Modbus sensor format: a YAML list, and

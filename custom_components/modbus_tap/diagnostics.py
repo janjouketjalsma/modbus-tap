@@ -35,4 +35,5 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: TapConf
         },
         "strings": find_strings(tap.store.registers),
         "registers": describe(tap.store.registers.items()),
+        "writes": tap.writes.as_dict(),
     }

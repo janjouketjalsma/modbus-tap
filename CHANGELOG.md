@@ -4,6 +4,15 @@ All notable changes to Modbus Tap. Versions follow [Semantic Versioning](https:/
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-09
+
+### Added
+
+- **Configure → Writes:** what the poller writes, how often, and every change in value, kept across restarts. Repeated writes of the same values count as one change, and the history is capped at 100 register blocks with 50 changes each, so it stays small. Registers in your map are shown by name.
+- Suggest a register map passes the poller's writes to the AI too, so it can name settings.
+- Diagnostics include the write history.
+- New guide: [Writes](docs/writes.md), including what to consider before writing to your devices yourself.
+
 ## [0.5.0] - 2026-11-09
 
 ### Added
@@ -79,7 +88,8 @@ First release.
 - Diagnostics with every register heard and hints.
 - Export to core Modbus YAML.
 
-[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.4.0...v0.4.1
