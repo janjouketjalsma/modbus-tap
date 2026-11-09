@@ -4,6 +4,13 @@ All notable changes to Modbus Tap. Versions follow [Semantic Versioning](https:/
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-09
+
+### Fixed
+
+- Saving **Configure → Recordings → Reference sources and storage** failed with an error in 0.4.0.
+- Releases are only published once all tests pass.
+
 ## [0.4.0] - 2026-11-09
 
 ### Changed
@@ -58,7 +65,8 @@ First release.
 - Diagnostics with every register heard and hints.
 - Export to core Modbus YAML.
 
-[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.2.0...v0.3.0

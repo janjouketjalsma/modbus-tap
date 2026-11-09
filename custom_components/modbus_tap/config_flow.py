@@ -325,7 +325,7 @@ class ModbusTapOptionsFlow(OptionsFlow):
     async def async_step_recording_sources(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         options = self.config_entry.options
         if user_input is not None:
-            return self._save(**user_input, **{CONF_KEEP_RECORDINGS: int(user_input[CONF_KEEP_RECORDINGS])})
+            return self._save(**{**user_input, CONF_KEEP_RECORDINGS: int(user_input[CONF_KEEP_RECORDINGS])})
         schema = probatio.Schema(
             {
                 probatio.Optional(CONF_REFERENCE_DEVICES, default=options.get(CONF_REFERENCE_DEVICES, [])): selector.DeviceSelector(

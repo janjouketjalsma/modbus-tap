@@ -14,7 +14,11 @@ permissions:
   contents: write
 
 jobs:
+  tests:
+    uses: ./.github/workflows/tests.yml
+
   release:
+    needs: tests  # never publish a version whose tests fail
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
