@@ -71,12 +71,14 @@
         "data": {
           "write_events": "Fire an event for every write",
           "reference_devices": "Reference devices for recordings",
+          "reference_patterns": "Reference entity patterns",
           "reference_entities": "Extra reference entities",
           "keep_recordings": "Recordings to keep"
         },
         "data_description": {
           "write_events": "Fires `modbus_tap_write` with the unit, registers, values and outcome whenever the poller writes.",
           "reference_devices": "Every sensor of these devices is logged next to the bus traffic in recordings started with the button. Pick the device of your inverter's cloud integration to get all its values at once.",
+          "reference_patterns": "Entity ids to log, with * as a wildcard, for sources that don't group their sensors under a device. For example `sensor.solarsynkv3_*`.",
           "reference_entities": "Single entities to log as well, from any device.",
           "keep_recordings": "Older recordings are deleted automatically."
         }
@@ -147,9 +149,13 @@
           "name": "Reference devices",
           "description": "Every sensor of these devices is logged alongside the bus traffic."
         },
+        "reference_patterns": {
+          "name": "Reference entity patterns",
+          "description": "Entity ids to log, with * as a wildcard, such as sensor.solarsynkv3_*."
+        },
         "reference_entities": {
           "name": "Reference entities",
-          "description": "Entities whose values are logged alongside the bus traffic. Leave this and reference devices empty to use the ones in Settings."
+          "description": "Entities whose values are logged alongside the bus traffic. Leave all reference fields empty to use the ones in Settings."
         }
       }
     },

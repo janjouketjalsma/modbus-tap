@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from fnmatch import fnmatchcase
 import time
 from collections.abc import Callable, Mapping
 from datetime import timedelta
@@ -27,6 +28,7 @@ from .const import (
     CONF_OVERRIDES,
     CONF_REFERENCE_DEVICES,
     CONF_REFERENCE_ENTITIES,
+    CONF_REFERENCE_PATTERNS,
     CONF_UNITS,
     CONF_WRITE_EVENTS,
     DEFAULT_KEEP_RECORDINGS,
@@ -202,16 +204,28 @@ class Tap:
     # --- recordings ------------------------------------------------------------
 
     @callback
-    def reference_entity_ids(self, entities: list[str] | None = None, devices: list[str] | None = None) -> list[str]:
-        """Reference entities for a Recording: the ones named, plus the sensors of the devices named.
+    def reference_entity_ids(
+        self, entities: list[str] | None = None, devices: list[str] | None = None, patterns: list[str] | None = None
+    ) -> list[str]:
+        """Reference entities for a Recording.
 
-        With neither given, the defaults from Settings are used.
+        The entities named, the sensors of the devices named, and every entity whose id matches
+        a pattern (for integrations and add-ons that don't group their sensors under a device).
+        With none given, the defaults from Settings are used.
         """
-        if entities is None and devices is None:
-            entities = self.entry.options.get(CONF_REFERENCE_ENTITIES, [])
-            devices = self.entry.options.get(CONF_REFERENCE_DEVICES, [])
+        if entities is None and devices is None and patterns is None:
+            options = self.entry.options
+            entities = options.get(CONF_REFERENCE_ENTITIES, [])
+            devices = options.get(CONF_REFERENCE_DEVICES, [])
+            patterns = options.get(CONF_REFERENCE_PATTERNS, [])
         registry = er.async_get(self.hass)
         found = list(entities or [])
+        if patterns:
+            found.extend(
+                state.entity_id
+                for state in self.hass.states.async_all(list(REFERENCE_DOMAINS))
+                if any(fnmatchcase(state.entity_id, pattern.strip()) for pattern in patterns)
+            )
         for device_id in devices or []:
             found.extend(
                 entry.entity_id

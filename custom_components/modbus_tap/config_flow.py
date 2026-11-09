@@ -21,6 +21,7 @@ from .const import (
     CONF_OVERRIDES,
     CONF_REFERENCE_DEVICES,
     CONF_REFERENCE_ENTITIES,
+    CONF_REFERENCE_PATTERNS,
     CONF_UNITS,
     CONF_WRITE_EVENTS,
     DEFAULT_KEEP_RECORDINGS,
@@ -240,6 +241,9 @@ class ModbusTapOptionsFlow(OptionsFlowWithReload):
                 probatio.Optional(
                     CONF_REFERENCE_DEVICES, default=options.get(CONF_REFERENCE_DEVICES, [])
                 ): selector.DeviceSelector(selector.DeviceSelectorConfig(multiple=True)),
+                probatio.Optional(
+                    CONF_REFERENCE_PATTERNS, default=options.get(CONF_REFERENCE_PATTERNS, [])
+                ): selector.TextSelector(selector.TextSelectorConfig(multiple=True)),
                 probatio.Optional(
                     CONF_REFERENCE_ENTITIES, default=options.get(CONF_REFERENCE_ENTITIES, [])
                 ): selector.EntitySelector(selector.EntitySelectorConfig(multiple=True)),

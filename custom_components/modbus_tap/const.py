@@ -14,6 +14,7 @@ CONF_WRITE_EVENTS: Final = "write_events"
 CONF_KEEP_RECORDINGS: Final = "keep_recordings"
 CONF_REFERENCE_ENTITIES: Final = "reference_entities"
 CONF_REFERENCE_DEVICES: Final = "reference_devices"
+CONF_REFERENCE_PATTERNS: Final = "reference_patterns"  # entity id globs, e.g. sensor.solarsynkv3_*
 
 DEFAULT_KEEP_RECORDINGS: Final = 20
 DEFAULT_RECORDING_HOURS: Final = 24.0

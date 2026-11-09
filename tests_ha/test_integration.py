@@ -269,3 +269,25 @@ async def test_recording_reference_devices(hass: HomeAssistant) -> None:
     assert {line["entity_id"] for line in lines if line["type"] == "entity"} == {pv.entity_id, soc.entity_id}
     assert await hass.config_entries.async_unload(entry.entry_id)
     await bridge.stop()
+
+
+async def test_recording_reference_patterns(hass: HomeAssistant) -> None:
+    """Add-ons like solarsynkv3 post plain states without a device; patterns pick them up."""
+    bridge = FakeBridge()
+    entry = await setup_entry(hass, await bridge.start())
+    hass.states.async_set("sensor.solarsynkv3_2401010101_pv_power", "2100", {"unit_of_measurement": "W"})
+    hass.states.async_set("sensor.solarsynkv3_2401010101_battery_soc", "55", {"unit_of_measurement": "%"})
+    hass.states.async_set("sensor.kitchen_temperature", "21")
+
+    response = await hass.services.async_call(
+        DOMAIN, "start_recording", {"config_entry": entry.entry_id, "reference_patterns": ["sensor.solarsynkv3_*"]}, blocking=True, return_response=True
+    )
+    await hass.services.async_call(DOMAIN, "stop_recording", {"config_entry": entry.entry_id}, blocking=True)
+    path = entry.runtime_data.library.directory / response["recording"]
+    header = json.loads(gzip.open(path, "rt").readline())
+    assert sorted(header["reference_entities"]) == [
+        "sensor.solarsynkv3_2401010101_battery_soc",
+        "sensor.solarsynkv3_2401010101_pv_power",
+    ]
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await bridge.stop()

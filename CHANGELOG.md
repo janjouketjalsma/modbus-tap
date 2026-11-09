@@ -4,6 +4,12 @@ All notable changes to Modbus Tap. Versions follow [Semantic Versioning](https:/
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-09
+
+### Added
+
+- Reference entity patterns for recordings, such as `sensor.solarsynkv3_*`. For sources that post sensors without a device, like the SolarSynk v3 add-on. Available in Settings and as `reference_patterns` on `modbus_tap.start_recording`.
+
 ## [0.2.0] - 2026-11-09
 
 ### Added
@@ -33,7 +39,8 @@ First release.
 - Diagnostics with every register heard and hints.
 - Export to core Modbus YAML.
 
-[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/janjouketjalsma/modbus-tap/releases/tag/v0.1.0

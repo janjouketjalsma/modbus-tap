@@ -18,6 +18,10 @@ start_recording:
       selector:
         device:
           multiple: true
+    reference_patterns:
+      selector:
+        text:
+          multiple: true
     reference_entities:
       selector:
         entity:
