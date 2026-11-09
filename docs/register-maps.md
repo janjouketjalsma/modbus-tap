@@ -1,6 +1,6 @@
 # Register maps
 
-A register map tells Modbus Tap what the registers on a unit mean: name, data type, scale, unit. Each unit on your bus has its own map. Edit it under **Configure → Register maps**: go to **Settings → Devices & services → Modbus Tap**, click **Configure** on your bridge's entry, and choose **Register maps** ([more on finding Configure](finding-your-way.md#configure-the-settings-of-your-bus)).
+A register map tells Modbus Tap what the registers on a unit mean: name, data type, scale, unit. Each unit on your bus has its own map. Edit it under **Configure → Sensors**: go to **Settings → Devices & services → Modbus Tap**, click **Configure** on your bridge's entry, choose **Sensors** and pick the unit. The screen shows what the poller reads from that unit, which community maps exist (with how many entries are documented, verified or guessed), and suggests one when the unit matches ([more on finding Configure](finding-your-way.md#configure-the-settings-of-your-bus)).
 
 ## Format
 

@@ -1,21 +1,26 @@
-"""Set up a Bus, change its Bridge address, and configure maps, Recordings and export."""
+"""Set up a Bus, change its Bridge address, and the Configure menu.
+
+The Configure menu is organised by task: sensors (register maps), recordings,
+export, advanced. Each screen says what it found on the bus and what to do next.
+"""
 
 from __future__ import annotations
 
 import asyncio
 import contextlib
 from datetime import UTC, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import probatio
 
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlowWithReload
+from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import callback
 from homeassistant.helpers import selector
 
 from .bridge import CONNECT_TIMEOUT
 from .const import (
+    ATTR_HOURS,
     CONF_COMMUNITY_MAP,
     CONF_KEEP_RECORDINGS,
     CONF_OVERRIDES,
@@ -25,12 +30,18 @@ from .const import (
     CONF_UNITS,
     CONF_WRITE_EVENTS,
     DEFAULT_KEEP_RECORDINGS,
+    DEFAULT_RECORDING_HOURS,
+    DOCS,
     DEFAULT_PORT,
     DOMAIN,
     TAPPING_GUIDE,
 )
+from .community import suggest
 from .export import core_modbus_yaml
 from .register_map import RegisterMapError, parse_yaml
+
+if TYPE_CHECKING:
+    from .tap import Tap
 
 CONF_UNIT = "unit"
 CONF_DELETE = "delete"
@@ -107,15 +118,35 @@ class ModbusTapConfigFlow(ConfigFlow, domain=DOMAIN):
         return ModbusTapOptionsFlow()
 
 
-class ModbusTapOptionsFlow(OptionsFlowWithReload):
-    """Configure → Register maps, Recordings, Export, Settings."""
+class ModbusTapOptionsFlow(OptionsFlow):
+    """Configure: Sensors, Recordings, Export, Advanced."""
 
     def __init__(self) -> None:
         self._unit: int | None = None
 
     @property
-    def _tap(self):
+    def _tap(self) -> Tap | None:
         return getattr(self.config_entry, "runtime_data", None)
+
+    def _save(self, **changes: Any) -> ConfigFlowResult:
+        return self.async_create_entry(data={**self.config_entry.options, **changes})
+
+    # --- status lines shown on the screens ------------------------------------
+
+    def _unit_line(self, tap: Tap, unit: int) -> str:
+        parts = [f"**Unit {unit}**"]
+        if model := tap.models.get(unit):
+            parts.append(model)
+        settings = self.config_entry.options.get(CONF_UNITS, {}).get(str(unit), {})
+        if (map_id := settings.get(CONF_COMMUNITY_MAP)) in tap.community_maps:
+            parts.append(f"map: {tap.community_maps[map_id].name}")
+        elif match := self._suggestion(tap, unit):
+            parts.append(f"suggested map: {match.name}")
+        parts.append(f"{len(tap.maps.get(unit, []))} sensors")
+        return " · ".join(parts)
+
+    def _suggestion(self, tap: Tap, unit: int):
+        return suggest(tap.community_maps.values(), unit, tap.store.values, tap.store.reads.get(unit, set()))
 
     def _known_units(self) -> list[int]:
         units = {int(u) for u in self.config_entry.options.get(CONF_UNITS, {})}
@@ -124,11 +155,24 @@ class ModbusTapOptionsFlow(OptionsFlowWithReload):
         return sorted(units)
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        return self.async_show_menu(step_id="init", menu_options=["pick_unit", "recordings", "export", "settings"])
+        tap = self._tap
+        if tap is None:
+            status = "Modbus Tap isn't running right now; some screens are unavailable."
+        else:
+            units = ", ".join(f"Unit {u}" for u in sorted(tap.store.units)) or "none yet"
+            status = (
+                f"Bridge: **{'connected' if tap.listener.connected else 'disconnected'}** · "
+                f"units heard: **{units}** · recording: **{tap.session.name if tap.session else 'off'}**"
+            )
+        return self.async_show_menu(
+            step_id="init",
+            menu_options=["sensors", "recordings", "export", "advanced"],
+            description_placeholders={"status": status, "docs": DOCS},
+        )
 
-    # --- Register maps -------------------------------------------------------
+    # --- Sensors (register maps) ---------------------------------------------------
 
-    async def async_step_pick_unit(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+    async def async_step_sensors(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         if user_input is not None:
             unit = str(user_input[CONF_UNIT]).strip()
@@ -136,43 +180,54 @@ class ModbusTapOptionsFlow(OptionsFlowWithReload):
                 self._unit = int(unit)
                 return await self.async_step_unit_map()
             errors[CONF_UNIT] = "invalid_unit"
-        units = [str(u) for u in self._known_units()] or ["1"]
+        tap = self._tap
+        units = self._known_units()
+        heard = "\n".join(f"- {self._unit_line(tap, u)}" for u in units) if tap and units else "Nothing heard yet. Check the bridge device's **Frames decoded** sensor."
+        options = [selector.SelectOptionDict(value=str(u), label=f"Unit {u}") for u in units] or [
+            selector.SelectOptionDict(value="1", label="Unit 1")
+        ]
         schema = probatio.Schema(
             {
-                probatio.Required(CONF_UNIT, default=units[0]): selector.SelectSelector(
-                    selector.SelectSelectorConfig(options=units, custom_value=True, mode=selector.SelectSelectorMode.DROPDOWN)
+                probatio.Required(CONF_UNIT, default=options[0]["value"]): selector.SelectSelector(
+                    selector.SelectSelectorConfig(options=options, custom_value=True, mode=selector.SelectSelectorMode.DROPDOWN)
                 )
             }
         )
-        return self.async_show_form(step_id="pick_unit", data_schema=schema, errors=errors)
+        return self.async_show_form(step_id="sensors", data_schema=schema, errors=errors, description_placeholders={"heard": heard})
 
     async def async_step_unit_map(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         unit = self._unit or 1
         units = dict(self.config_entry.options.get(CONF_UNITS, {}))
         current = units.get(str(unit), {})
         errors: dict[str, str] = {}
-        placeholders = {"unit": str(unit), "error": ""}
+        error = ""
         if user_input is not None:
             try:
                 parse_yaml(user_input.get(CONF_OVERRIDES, ""))
             except RegisterMapError as err:
                 errors[CONF_OVERRIDES] = "invalid_map"
-                placeholders["error"] = str(err)
+                error = str(err)
             else:
                 chosen = user_input.get(CONF_COMMUNITY_MAP, NO_MAP)
                 units[str(unit)] = {
                     CONF_COMMUNITY_MAP: None if chosen == NO_MAP else chosen,
                     CONF_OVERRIDES: user_input.get(CONF_OVERRIDES, ""),
                 }
-                return self.async_create_entry(data={**self.config_entry.options, CONF_UNITS: units})
+                return self._save(**{CONF_UNITS: units})
 
-        maps = self._tap.community_maps if self._tap else {}
-        options = [selector.SelectOptionDict(value=NO_MAP, label="—")] + [
-            selector.SelectOptionDict(value=m.id, label=f"{m.manufacturer} · {m.name}") for m in maps.values()
+        tap = self._tap
+        maps = tap.community_maps if tap else {}
+        suggestion = self._suggestion(tap, unit) if tap else None
+        options = [selector.SelectOptionDict(value=NO_MAP, label="None: only my own entries")] + [
+            selector.SelectOptionDict(
+                value=m.id, label=f"{m.manufacturer} {m.name}" + (" (suggested for this unit)" if suggestion and m.id == suggestion.id else "")
+            )
+            for m in maps.values()
         ]
+        default_map = current.get(CONF_COMMUNITY_MAP) or (suggestion.id if suggestion else NO_MAP)
         schema = probatio.Schema(
             {
-                probatio.Optional(CONF_COMMUNITY_MAP, default=current.get(CONF_COMMUNITY_MAP) or NO_MAP): selector.SelectSelector(
+                probatio.Optional(CONF_COMMUNITY_MAP, default=default_map): selector.SelectSelector(
                     selector.SelectSelectorConfig(options=options, mode=selector.SelectSelectorMode.DROPDOWN)
                 ),
                 probatio.Optional(CONF_OVERRIDES, description={"suggested_value": current.get(CONF_OVERRIDES, "")}): selector.TextSelector(
@@ -182,11 +237,114 @@ class ModbusTapOptionsFlow(OptionsFlowWithReload):
         )
         if user_input is not None:
             schema = self.add_suggested_values_to_schema(schema, user_input)
-        return self.async_show_form(step_id="unit_map", data_schema=schema, errors=errors, description_placeholders=placeholders)
+        return self.async_show_form(
+            step_id="unit_map",
+            data_schema=schema,
+            errors=errors,
+            description_placeholders={
+                "unit": str(unit),
+                "heard": self._heard_summary(tap, unit) if tap else "",
+                "maps": "\n".join(f"- {self._map_summary(m)}" for m in maps.values()) or "- none",
+                "docs": f"{DOCS}/register-maps.md",
+                "error": error,
+            },
+        )
 
-    # --- Recordings ------------------------------------------------------------
+    @staticmethod
+    def _heard_summary(tap: Tap, unit: int) -> str:
+        reads = sorted(tap.store.reads.get(unit, set()), key=lambda r: (r[0].value, r[1]))
+        if not reads:
+            return "Nothing heard from this unit yet."
+        blocks = ", ".join(f"{table.value} {start}-{start + count - 1}" for table, start, count in reads[:8])
+        more = f" and {len(reads) - 8} more" if len(reads) > 8 else ""
+        interval = tap.store.poll_interval(unit)
+        every = f", about every {interval:.0f} s" if interval else ""
+        model = f" Model: **{tap.models[unit]}**." if unit in tap.models else ""
+        return f"The poller reads {blocks}{more}{every}.{model}"
+
+    @staticmethod
+    def _map_summary(community_map) -> str:
+        entries = community_map.entries
+        verified = sum(1 for e in entries if e.verified)
+        documented = sum(1 for e in entries if e.documented)
+        guessed = sum(1 for e in entries if e.guessed)
+        return f"{community_map.manufacturer} {community_map.name}: {len(entries)} sensors ({documented} documented, {verified} verified, {guessed} guessed)"
+
+    # --- Recordings -------------------------------------------------------------------
 
     async def async_step_recordings(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        tap = self._tap
+        if tap is None:
+            return self.async_abort(reason="not_loaded")
+        references = tap.reference_entity_ids()
+        state = f"Recording now: **{tap.session.name}**." if tap.session else "Not recording."
+        sources = (
+            f"{len(references)} reference entities will be logged with each recording."
+            if references
+            else "No reference sources yet: recordings will only contain bus traffic. Set them under **Reference sources**."
+        )
+        return self.async_show_menu(
+            step_id="recordings",
+            menu_options=["recording_control", "recording_sources", "recording_files"],
+            description_placeholders={"state": state, "sources": sources, "docs": f"{DOCS}/recordings.md"},
+        )
+
+    async def async_step_recording_control(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        tap = self._tap
+        if tap is None:
+            return self.async_abort(reason="not_loaded")
+        if tap.session is not None:
+            if user_input is not None:
+                await tap.async_stop_recording()
+                return self.async_abort(reason="recording_stopped")
+            return self.async_show_form(
+                step_id="recording_control", data_schema=probatio.Schema({}), description_placeholders={"name": tap.session.name, "references": ""}
+            )
+        references = tap.reference_entity_ids()
+        if user_input is not None:
+            await tap.async_start_recording(float(user_input[ATTR_HOURS]), references)
+            return self.async_abort(reason="recording_started")
+        schema = probatio.Schema(
+            {
+                probatio.Required(ATTR_HOURS, default=DEFAULT_RECORDING_HOURS): selector.NumberSelector(
+                    selector.NumberSelectorConfig(min=0.25, max=DEFAULT_RECORDING_HOURS, step=0.25, unit_of_measurement="h", mode=selector.NumberSelectorMode.BOX)
+                )
+            }
+        )
+        listed = ", ".join(f"`{e}`" for e in references[:10]) + (f" and {len(references) - 10} more" if len(references) > 10 else "")
+        return self.async_show_form(
+            step_id="recording_start",
+            data_schema=schema,
+            description_placeholders={"references": listed or "none (bus traffic only)"},
+            last_step=True,
+        )
+
+    async def async_step_recording_start(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        return await self.async_step_recording_control(user_input)
+
+    async def async_step_recording_sources(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        options = self.config_entry.options
+        if user_input is not None:
+            return self._save(**user_input, **{CONF_KEEP_RECORDINGS: int(user_input[CONF_KEEP_RECORDINGS])})
+        schema = probatio.Schema(
+            {
+                probatio.Optional(CONF_REFERENCE_DEVICES, default=options.get(CONF_REFERENCE_DEVICES, [])): selector.DeviceSelector(
+                    selector.DeviceSelectorConfig(multiple=True)
+                ),
+                probatio.Optional(CONF_REFERENCE_PATTERNS, default=options.get(CONF_REFERENCE_PATTERNS, [])): selector.TextSelector(
+                    selector.TextSelectorConfig(multiple=True)
+                ),
+                probatio.Optional(CONF_REFERENCE_ENTITIES, default=options.get(CONF_REFERENCE_ENTITIES, [])): selector.EntitySelector(
+                    selector.EntitySelectorConfig(multiple=True)
+                ),
+                probatio.Optional(CONF_KEEP_RECORDINGS, default=options.get(CONF_KEEP_RECORDINGS, DEFAULT_KEEP_RECORDINGS)): selector.NumberSelector(
+                    selector.NumberSelectorConfig(min=1, max=200, mode=selector.NumberSelectorMode.BOX)
+                ),
+            }
+        )
+        return self.async_show_form(step_id="recording_sources", data_schema=schema, description_placeholders={"docs": f"{DOCS}/recordings.md"})
+
+    async def async_step_recording_files(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         tap = self._tap
         if tap is None:
             return self.async_abort(reason="not_loaded")
@@ -208,11 +366,9 @@ class ModbusTapOptionsFlow(OptionsFlowWithReload):
                 )
             }
         )
-        return self.async_show_form(
-            step_id="recordings", data_schema=schema, description_placeholders={"recordings": "\n".join(lines)}
-        )
+        return self.async_show_form(step_id="recording_files", data_schema=schema, description_placeholders={"recordings": "\n".join(lines)})
 
-    # --- Export ------------------------------------------------------------------
+    # --- Export ----------------------------------------------------------------------
 
     async def async_step_export(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         tap = self._tap
@@ -222,34 +378,19 @@ class ModbusTapOptionsFlow(OptionsFlowWithReload):
             return self.async_abort(reason="export_done")
         if not any(tap.maps.values()):
             return self.async_abort(reason="nothing_to_export")
-        text = core_modbus_yaml(
-            tap.listener.host, tap.listener.port, tap.maps, {unit: tap.store.poll_interval(unit) for unit in tap.maps}
-        )
+        text = core_modbus_yaml(tap.listener.host, tap.listener.port, tap.maps, {unit: tap.store.poll_interval(unit) for unit in tap.maps})
         return self.async_show_form(
-            step_id="export", data_schema=probatio.Schema({}), description_placeholders={"yaml": text}
+            step_id="export", data_schema=probatio.Schema({}), description_placeholders={"yaml": text, "docs": f"{DOCS}/replacing-your-poller.md"}
         )
 
-    # --- Settings ----------------------------------------------------------------
+    # --- Advanced --------------------------------------------------------------------
 
-    async def async_step_settings(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        options = self.config_entry.options
+    async def async_step_advanced(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
-            return self.async_create_entry(data={**options, **user_input, CONF_KEEP_RECORDINGS: int(user_input[CONF_KEEP_RECORDINGS])})
+            return self._save(**user_input)
         schema = probatio.Schema(
             {
-                probatio.Optional(CONF_WRITE_EVENTS, default=options.get(CONF_WRITE_EVENTS, False)): selector.BooleanSelector(),
-                probatio.Optional(
-                    CONF_REFERENCE_DEVICES, default=options.get(CONF_REFERENCE_DEVICES, [])
-                ): selector.DeviceSelector(selector.DeviceSelectorConfig(multiple=True)),
-                probatio.Optional(
-                    CONF_REFERENCE_PATTERNS, default=options.get(CONF_REFERENCE_PATTERNS, [])
-                ): selector.TextSelector(selector.TextSelectorConfig(multiple=True)),
-                probatio.Optional(
-                    CONF_REFERENCE_ENTITIES, default=options.get(CONF_REFERENCE_ENTITIES, [])
-                ): selector.EntitySelector(selector.EntitySelectorConfig(multiple=True)),
-                probatio.Optional(
-                    CONF_KEEP_RECORDINGS, default=options.get(CONF_KEEP_RECORDINGS, DEFAULT_KEEP_RECORDINGS)
-                ): selector.NumberSelector(selector.NumberSelectorConfig(min=1, max=200, mode=selector.NumberSelectorMode.BOX)),
+                probatio.Optional(CONF_WRITE_EVENTS, default=self.config_entry.options.get(CONF_WRITE_EVENTS, False)): selector.BooleanSelector(),
             }
         )
-        return self.async_show_form(step_id="settings", data_schema=schema)
+        return self.async_show_form(step_id="advanced", data_schema=schema)

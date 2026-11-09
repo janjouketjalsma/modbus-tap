@@ -9,16 +9,18 @@ Modbus Tap puts things in three places in Home Assistant. Most settings live beh
 3. Find your bridge's entry. It's named after the bridge address, for example `192.168.1.120:8899`.
 4. Click **Configure** on that entry. Depending on your Home Assistant version, it's a button on the entry, or under the entry's **⋮** menu.
 
-The Configure menu has four parts:
+The Configure menu opens with the current status (bridge connected, units heard, recording on or off) and is organised by what you want to do:
 
 | Menu item | What it's for |
 |---|---|
-| **Register maps** | Pick a unit, choose a community map and add your own entries ([guide](register-maps.md)) |
-| **Recordings** | Download and delete recordings ([guide](recordings.md)) |
+| **Sensors** | Pick a unit, choose a community map and add your own entries. The screen shows what the poller reads and suggests a matching map ([guide](register-maps.md)) |
+| **Recordings** | **Start or stop a recording**, **Reference sources and storage** (what to log next to the bus traffic, how many recordings to keep), **Download or delete recordings** ([guide](recordings.md)) |
 | **Export to core Modbus** | Get `modbus:` YAML for replacing your poller ([guide](replacing-your-poller.md)) |
-| **Settings** | Reference sources for recordings, write events, how many recordings to keep |
+| **Advanced** | Write events |
 
-In these docs, **Configure → Settings** means: open Configure as above, then choose **Settings**.
+Only saving a unit's register map reloads Modbus Tap. Everything else takes effect right away, so a running recording keeps going.
+
+In these docs, **Configure → Recordings** means: open Configure as above, then choose **Recordings**.
 
 ## The bridge device
 

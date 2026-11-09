@@ -29,7 +29,7 @@ modbus:
 
 ## 2. Look at what the poller wrote
 
-The old poller may have done more than read. On a Sosen inverter, for example, an Elinter Magpie sets the inverter's clock. Check a recording for `transaction` lines with `function` 6 or 16 (or enable write events in Settings and watch `modbus_tap_write`). If something matters, recreate it with an automation that calls `modbus.write_register` from core Modbus.
+The old poller may have done more than read. On a Sosen inverter, for example, an Elinter Magpie sets the inverter's clock. Check a recording for `transaction` lines with `function` 6 or 16 (or enable write events under **Configure → Advanced** and watch `modbus_tap_write`). If something matters, recreate it with an automation that calls `modbus.write_register` from core Modbus.
 
 ## 3. Switch over
 

@@ -32,7 +32,7 @@ The diagnostics download (integration page → ⋮ → **Download diagnostics**)
 
 ## 3. Check in Home Assistant
 
-Paste the map into **Configure → Register maps** ([where's Configure?](finding-your-way.md#configure-the-settings-of-your-bus)) and compare the new sensors with your reference values for a day. Fix the scale, sign or type where they don't match. When you're happy, consider contributing the map so the next person with the same device starts from yours.
+Paste the map into **Configure → Sensors**, pick the unit, and put it under **Your entries** ([where's Configure?](finding-your-way.md#configure-the-settings-of-your-bus)) and compare the new sensors with your reference values for a day. Fix the scale, sign or type where they don't match. When you're happy, consider contributing the map so the next person with the same device starts from yours.
 
 ## Prompt for an AI assistant
 

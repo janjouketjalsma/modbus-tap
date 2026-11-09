@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import logging
 from fnmatch import fnmatchcase
 import time
@@ -77,13 +78,14 @@ class Tap:
         self.entry = entry
         self.community_maps = community_maps
         self.maps = unit_maps(entry.options, community_maps)
+        self.units_config = copy.deepcopy(dict(entry.options.get(CONF_UNITS, {})))  # to tell when a reload is needed
         self.store = RegisterStore()
         self.listener = BridgeListener(entry.data[CONF_HOST], entry.data[CONF_PORT], RtuDecoder(), self._on_transactions, self._on_status)
         self.library = RecordingLibrary(Path(hass.config.path(RECORDINGS_PATH, entry.entry_id)))
         self.session: RecordingSession | None = None
         self._status_listeners: set[Callable[[], None]] = set()
         self._tick_listeners: set[Callable[[], None]] = set()
-        self._models: dict[int, str] = {}
+        self.models: dict[int, str] = {}
 
     # --- lifecycle ----------------------------------------------------------
 
@@ -187,8 +189,8 @@ class Tap:
             if entry is None or (registers := self.store.values(entry.keys)) is None:
                 continue
             model = str(decode(entry.data_type, registers, entry.swap))
-            if model and self._models.get(unit) != model:
-                self._models[unit] = model
+            if model and self.models.get(unit) != model:
+                self.models[unit] = model
                 if device := devices.async_get_device_by_identifier(unit_identifier(self.entry, unit), self.entry.entry_id):
                     devices.async_update_device(device.id, model=model)
 
@@ -252,7 +254,7 @@ class Tap:
                 "Recording started, but without reference sources, so it only contains bus traffic. "
                 "To log values you already have next to it (such as your inverter's cloud sensors), go to "
                 "**Settings → Devices & services → Modbus Tap**, click **Configure** on this bridge's entry, "
-                "choose **Settings** and set **Reference devices** or **Reference entity patterns**. "
+                "choose **Recordings → Reference sources and storage**, and set **Reference devices** or **Reference entity patterns**. "
                 f"Then stop and start the recording again. [More about recordings]({RECORDINGS_GUIDE})",
                 title="Modbus Tap: no reference sources",
                 notification_id=f"{DOMAIN}_{self.entry.entry_id}_no_references",
@@ -269,7 +271,7 @@ class Tap:
             self.hass,
             f"Recording **{session.name}** finished ({reason}).\n\n"
             f"[Download it]({self.download_url(session.name)}) (link valid for one hour), or find it later under "
-            f"**Settings → Devices & services → Modbus Tap → Configure → Recordings**.",
+            f"**Settings → Devices & services → Modbus Tap → Configure → Recordings → Download or delete recordings**.",
             title="Modbus Tap recording finished",
             notification_id=f"{DOMAIN}_{self.entry.entry_id}_recording",
         )

@@ -31,13 +31,13 @@ All the details: [Recordings](recordings.md).
 - **Start and stop** with buttons on the bridge device, or with the `modbus_tap.start_recording` and `modbus_tap.stop_recording` actions.
 - **Reference devices and entities:** log other Home Assistant values alongside the bus traffic. Pick a whole device, such as your inverter's cloud integration, or a pattern like `sensor.solarsynkv3_*`, to get all its sensors at once.
 - **Notes:** add your own with `modbus_tap.add_note` ("kettle on").
-- **Managed in Home Assistant:** download and delete under **Configure → Recordings** ([where's Configure?](finding-your-way.md#configure-the-settings-of-your-bus)). Old ones are cleaned up automatically, and a notification links to each finished recording.
+- **Managed in Home Assistant:** start, stop, download and delete under **Configure → Recordings** ([where's Configure?](finding-your-way.md#configure-the-settings-of-your-bus)). Old ones are cleaned up automatically, and a notification links to each finished recording.
 - **Documented format** for scripts and AI assistants ([format](recording-format.md), [method and prompt](working-out-a-register-map.md)).
 
 ## Writes
 
 - **Values the poller writes** update the register once the unit confirms them. Rejected and unanswered writes are ignored.
-- **Optional `modbus_tap_write` event** for each write, with the outcome (`confirmed`, `rejected`, `unanswered`). Turn it on under **Configure → Settings**.
+- **Optional `modbus_tap_write` event** for each write, with the outcome (`confirmed`, `rejected`, `unanswered`). Turn it on under **Configure → Advanced**.
 
 ## Help when things go wrong
 
@@ -46,4 +46,4 @@ All the details: [Recordings](recordings.md).
 
 ## Moving on
 
-- **Export to core Modbus:** **Configure → Export** gives ready-to-paste `modbus:` YAML for replacing your poller ([guide](replacing-your-poller.md)).
+- **Export to core Modbus:** **Configure → Export to core Modbus** gives ready-to-paste `modbus:` YAML for replacing your poller ([guide](replacing-your-poller.md)).

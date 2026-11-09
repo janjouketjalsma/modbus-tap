@@ -30,8 +30,7 @@ class UseCommunityMapFlow(RepairsFlow):
             units = dict(entry.options.get(CONF_UNITS, {}))
             current = units.get(str(self.unit), {})
             units[str(self.unit)] = {CONF_COMMUNITY_MAP: self.map_id, CONF_OVERRIDES: current.get(CONF_OVERRIDES, "")}
-            self.hass.config_entries.async_update_entry(entry, options={**entry.options, CONF_UNITS: units})
-            self.hass.config_entries.async_schedule_reload(entry.entry_id)
+            self.hass.config_entries.async_update_entry(entry, options={**entry.options, CONF_UNITS: units})  # reloads via the update listener
             return self.async_create_entry(data={})
         maps = self.hass.data.get(COMMUNITY_MAPS, {})
         name = maps[self.map_id].name if self.map_id in maps else self.map_id

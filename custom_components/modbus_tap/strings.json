@@ -33,30 +33,71 @@
     "step": {
       "init": {
         "title": "Configure Modbus Tap",
+        "description": "{status}\n\nWhat would you like to do? New here? Start with **Sensors**. [Docs]({docs})",
         "menu_options": {
-          "pick_unit": "Register maps",
-          "recordings": "Recordings",
+          "sensors": "Sensors: name the registers of a unit",
+          "recordings": "Recordings: record, reference sources, downloads",
           "export": "Export to core Modbus",
-          "settings": "Settings"
+          "advanced": "Advanced"
         }
       },
-      "pick_unit": {
-        "title": "Which unit?",
-        "description": "Pick a unit address heard on the bus, or type one.",
+      "sensors": {
+        "title": "Sensors",
+        "description": "Units heard on this bus:\n{heard}\n\nPick a unit to choose its register map. You can also type a unit address you expect to hear.",
         "data": {
-          "unit": "Unit address"
+          "unit": "Unit"
         }
       },
       "unit_map": {
         "title": "Register map for unit {unit}",
-        "description": "Start from a community map, then add or correct entries below. Entries use the core Modbus sensor format, so existing core Modbus sensor configs paste right in. Your entries override community entries with the same table and address.",
+        "description": "{heard}\n\n**1. Start from a community map** if one fits your device. Available:\n{maps}\n\n**2. Add or correct entries** in the box below, in the core Modbus sensor format. Your entries replace community entries with the same table and address. Leave it empty to use the community map as it is.\n\nExample:\n```yaml\n- name: Grid voltage\n  address: 37\n  input_type: input\n  scale: 0.1\n  precision: 1\n  unit_of_measurement: V\n  device_class: voltage\n```\nNo idea what the registers mean? Make a recording first (Configure → Recordings). [Register map guide]({docs})",
         "data": {
           "community_map": "Community map",
           "overrides": "Your entries (YAML)"
+        },
+        "data_description": {
+          "community_map": "Ready-made sensors for a device model. Suggested when this unit matches one.",
+          "overrides": "Optional. Saving reloads Modbus Tap so the sensors update."
         }
       },
       "recordings": {
         "title": "Recordings",
+        "description": "{state} {sources}\n\nRecordings log all bus traffic next to values you already have, so you can work out what each register means. [Recordings guide]({docs})",
+        "menu_options": {
+          "recording_control": "Start or stop a recording",
+          "recording_sources": "Reference sources and storage",
+          "recording_files": "Download or delete recordings"
+        }
+      },
+      "recording_start": {
+        "title": "Start a recording",
+        "description": "Logged next to the bus traffic: {references}.\n\nLet it run while things change (sun, clouds, appliances on and off). The **Stop recording** button on the bridge device ends it early.",
+        "data": {
+          "hours": "Stop after"
+        }
+      },
+      "recording_control": {
+        "title": "Stop the recording",
+        "description": "**{name}** is running. Submit to stop it; a notification will link to the file."
+      },
+      "recording_sources": {
+        "title": "Reference sources and storage",
+        "description": "Values logged next to the bus traffic in every recording: your answer key for matching registers. Changing these doesn't interrupt a running recording; it uses them from the next start. [Which to use?]({docs})",
+        "data": {
+          "reference_devices": "Reference devices",
+          "reference_patterns": "Reference entity patterns",
+          "reference_entities": "Extra reference entities",
+          "keep_recordings": "Recordings to keep"
+        },
+        "data_description": {
+          "reference_devices": "Every sensor of these devices is logged. Pick the device of your inverter's cloud integration to get all its values at once.",
+          "reference_patterns": "For sensors without a device, such as those posted by an add-on. Use * as a wildcard, for example `sensor.solarsynkv3_*`.",
+          "reference_entities": "Single entities from anywhere.",
+          "keep_recordings": "Older recordings are deleted automatically."
+        }
+      },
+      "recording_files": {
+        "title": "Download or delete recordings",
         "description": "{recordings}\n\nDownload links work for one hour. Select recordings below to delete them.",
         "data": {
           "delete": "Delete"
@@ -64,23 +105,15 @@
       },
       "export": {
         "title": "Export to core Modbus",
-        "description": "Ready to replace your poller? Paste this into `configuration.yaml`. It polls the same units through the same bridge, at the rate your poller used.\n\n```yaml\n{yaml}\n```"
+        "description": "Ready to replace your poller? Paste this into `configuration.yaml`. It polls the same units through the same bridge, at the rate your poller used. [What else to check]({docs})\n\n```yaml\n{yaml}\n```"
       },
-      "settings": {
-        "title": "Settings",
+      "advanced": {
+        "title": "Advanced",
         "data": {
-          "write_events": "Fire an event for every write",
-          "reference_devices": "Reference devices for recordings",
-          "reference_patterns": "Reference entity patterns",
-          "reference_entities": "Extra reference entities",
-          "keep_recordings": "Recordings to keep"
+          "write_events": "Fire an event for every write"
         },
         "data_description": {
-          "write_events": "Fires `modbus_tap_write` with the unit, registers, values and outcome whenever the poller writes.",
-          "reference_devices": "Every sensor of these devices is logged next to the bus traffic in recordings started with the button. Pick the device of your inverter's cloud integration to get all its values at once.",
-          "reference_patterns": "Entity ids to log, with * as a wildcard, for sources that don't group their sensors under a device. For example `sensor.solarsynkv3_*`.",
-          "reference_entities": "Single entities to log as well, from any device.",
-          "keep_recordings": "Older recordings are deleted automatically."
+          "write_events": "Fires `modbus_tap_write` with the unit, registers, values and outcome whenever the poller writes. Handy for automations."
         }
       }
     },
@@ -91,9 +124,11 @@
     "abort": {
       "not_loaded": "Modbus Tap isn't running right now. Try again once it has started.",
       "recordings_updated": "Recordings updated.",
-      "no_recordings": "No recordings yet. Press Start recording on the bridge device to make one.",
+      "no_recordings": "No recordings yet. Use Start or stop a recording, or the Start recording button on the bridge device.",
       "export_done": "Done.",
-      "nothing_to_export": "No register maps yet. Add one under Register maps first."
+      "nothing_to_export": "No register maps yet. Set one up under Sensors first.",
+      "recording_started": "Recording started. Stop it with the Stop recording button on the bridge device, or here.",
+      "recording_stopped": "Recording stopped. A notification links to the file."
     }
   },
   "device": {
@@ -155,7 +190,7 @@
         },
         "reference_entities": {
           "name": "Reference entities",
-          "description": "Entities whose values are logged alongside the bus traffic. Leave all reference fields empty to use the ones in Settings."
+          "description": "Entities whose values are logged alongside the bus traffic. Leave all reference fields empty to use the ones set in Configure → Recordings."
         }
       }
     },

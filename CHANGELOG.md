@@ -4,6 +4,18 @@ All notable changes to Modbus Tap. Versions follow [Semantic Versioning](https:/
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-09
+
+### Changed
+
+- ⚠️ Breaking (menu only, no settings lost): Configure is reorganised by task. **Sensors** (was Register maps), **Recordings** with **Start or stop a recording**, **Reference sources and storage** and **Download or delete recordings**, **Export to core Modbus**, and **Advanced** (write events). Reference sources moved from Settings to Recordings.
+- Configure screens explain what they found: the status of the bridge, units heard with model and map, what the poller reads from a unit, and how many community-map entries are documented, verified or guessed. A matching community map is preselected.
+- Changing reference sources, storage or write events no longer reloads Modbus Tap, so a running recording keeps going. Only saving a register map reloads.
+
+### Added
+
+- Start a recording from Configure, with a duration and a preview of which reference entities will be logged.
+
 ## [0.3.1] - 2026-11-09
 
 ### Added
@@ -46,7 +58,8 @@ First release.
 - Diagnostics with every register heard and hints.
 - Export to core Modbus YAML.
 
-[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.1.1...v0.2.0

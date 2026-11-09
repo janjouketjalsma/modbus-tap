@@ -228,7 +228,7 @@ async def test_options_unit_map_validates_and_exports(hass: HomeAssistant) -> No
     entry = await setup_entry(hass, await bridge.start())
     result = await hass.config_entries.options.async_init(entry.entry_id)
     assert result["type"] is FlowResultType.MENU
-    result = await hass.config_entries.options.async_configure(result["flow_id"], {"next_step_id": "pick_unit"})
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"next_step_id": "sensors"})
     result = await hass.config_entries.options.async_configure(result["flow_id"], {"unit": "1"})
     assert result["step_id"] == "unit_map"
     result = await hass.config_entries.options.async_configure(result["flow_id"], {CONF_COMMUNITY_MAP: "none", CONF_OVERRIDES: "- name: x"})
@@ -289,5 +289,36 @@ async def test_recording_reference_patterns(hass: HomeAssistant) -> None:
         "sensor.solarsynkv3_2401010101_battery_soc",
         "sensor.solarsynkv3_2401010101_pv_power",
     ]
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await bridge.stop()
+
+
+async def test_options_recording_paths_do_not_interrupt(hass: HomeAssistant) -> None:
+    bridge = FakeBridge()
+    entry = await setup_entry(hass, await bridge.start())
+    tap = entry.runtime_data
+    hass.states.async_set("sensor.solarsynkv3_1_pv_power", "100")
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"next_step_id": "recordings"})
+    assert result["type"] is FlowResultType.MENU
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"next_step_id": "recording_control"})
+    assert result["step_id"] == "recording_start"
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"hours": 1})
+    assert result["reason"] == "recording_started"
+    assert tap.session is not None
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"next_step_id": "recordings"})
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"next_step_id": "recording_sources"})
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"reference_patterns": ["sensor.solarsynkv3_*"], "reference_devices": [], "reference_entities": [], "keep_recordings": 5}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    assert entry.runtime_data is tap and tap.session is not None  # no reload, still recording
+    assert tap.reference_entity_ids() == ["sensor.solarsynkv3_1_pv_power"]
+
+    await tap.async_stop_recording()
     assert await hass.config_entries.async_unload(entry.entry_id)
     await bridge.stop()

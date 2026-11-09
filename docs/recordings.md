@@ -4,7 +4,7 @@ A recording logs everything that happens on the bus, timestamped, together with 
 
 ## 1. Choose your reference sources
 
-Reference sources are your answer key: values Modbus Tap writes into the recording next to the bus traffic, so registers can be matched against them. Set them once under **Configure → Settings** ([where's Configure?](finding-your-way.md#configure-the-settings-of-your-bus)):
+Reference sources are your answer key: values Modbus Tap writes into the recording next to the bus traffic, so registers can be matched against them. Set them once under **Configure → Recordings → Reference sources and storage** ([where's Configure?](finding-your-way.md#configure-the-settings-of-your-bus)):
 
 | Setting | Use it for | Example |
 |---|---|---|
@@ -12,13 +12,13 @@ Reference sources are your answer key: values Modbus Tap writes into the recordi
 | **Reference entity patterns** | Sensors without a device, such as those posted by an add-on. Use `*` as a wildcard. | `sensor.solarsynkv3_*` for the SolarSynk v3 add-on |
 | **Extra reference entities** | Single sensors from anywhere | A smart plug's power sensor |
 
-Combine them as you like. Only `sensor` and `binary_sensor` entities are picked up by devices and patterns.
+Changing them doesn't interrupt a running recording; they're used from the next start. Combine them as you like. Only `sensor` and `binary_sensor` entities are picked up by devices and patterns.
 
 Not sure what your entities are called? Look them up under **Settings → Devices & services → Entities**, and search for the integration or add-on name.
 
 ## 2. Record
 
-1. Open the **bridge device** (**Settings → Devices & services → Modbus Tap →** the device named **Bridge …**) and press **Start recording**.
+1. Press **Start recording** on the **bridge device** (**Settings → Devices & services → Modbus Tap →** the device named **Bridge …**), or use **Configure → Recordings → Start or stop a recording**, which also shows which reference entities will be logged and lets you pick a duration.
 2. Let it run for a few hours while things change: sunrise, clouds, the oven on, the car charging. Two minutes at night shows almost nothing moving.
 3. Add notes for things the reference sources can't see, for example "kettle on" or "app shows 2.1 kW solar". Use the `modbus_tap.add_note` action from a dashboard button or a phone shortcut. There's an example below.
 4. Press **Stop recording**. Recordings also stop on their own after 24 hours.
@@ -28,15 +28,15 @@ The **Recording** sensor on the bridge device shows the name of the running reco
 ## 3. Download
 
 - **Right away:** a notification (the bell) links to the finished recording. The link works for one hour.
-- **Later:** **Configure → Recordings** lists every recording with a fresh download link, and lets you delete the ones you don't need.
+- **Later:** **Configure → Recordings → Download or delete recordings** lists every recording with a fresh download link, and lets you delete the ones you don't need.
 
-Modbus Tap keeps your 20 most recent recordings by default; change this under **Configure → Settings**. The files are in your config folder under `modbus_tap/recordings/`, if you prefer the Samba or File editor add-on.
+Modbus Tap keeps your 20 most recent recordings by default; change this under **Configure → Recordings → Reference sources and storage**. The files are in your config folder under `modbus_tap/recordings/`, if you prefer the Samba or File editor add-on.
 
 What's inside a recording is described in [Recording format](recording-format.md).
 
 ## From automations and dashboards
 
-The actions accept their own reference sources. Leave them all out to use the ones from Settings.
+The actions accept their own reference sources. Leave them all out to use the ones set under **Configure → Recordings → Reference sources and storage**.
 
 ```yaml
 # Record three hours from sunrise, with the SolarSynk sensors as reference
