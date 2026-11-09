@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from http import HTTPStatus
 
-from aiohttp.hdrs import CONTENT_DISPOSITION
+from aiohttp.hdrs import CONTENT_DISPOSITION, CONTENT_TYPE
 from aiohttp.web import FileResponse, Request, Response
 
 from homeassistant.components.http import KEY_AUTHENTICATED, KEY_HASS, HomeAssistantView
@@ -43,4 +43,6 @@ class RecordingDownloadView(HomeAssistantView):
         path = await hass.async_add_executor_job(entry.runtime_data.library.path_of, name)
         if path is None:
             return Response(status=HTTPStatus.NOT_FOUND)
-        return FileResponse(path, headers={CONTENT_DISPOSITION: f'attachment; filename="{name}"'})
+        # An explicit type: guessed from ".jsonl.gz" it becomes a nameless binary,
+        # which phones save as ".bin".
+        return FileResponse(path, headers={CONTENT_TYPE: "application/gzip", CONTENT_DISPOSITION: f'attachment; filename="{name}"'})

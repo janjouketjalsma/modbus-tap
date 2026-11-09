@@ -12,7 +12,7 @@ def _recording(points: int = 40):
     for i in range(points):
         t = 1000.0 + i * 10
         pv = int(1500 + 1200 * math.sin(i / 5))  # watts, raw = W
-        battery = int(-800 + 60 * i)  # signed, raw = W / 10... crosses zero
+        battery = int(-800 + 60 * i + 300 * math.cos(i / 3))  # signed, raw = W / 10, crosses zero
         energy = 120_000 + i * 37  # 32-bit counter, 0.01 kWh
         voltage = 2300 + (i % 3)  # changes, no reference
         values = [
@@ -142,3 +142,25 @@ def test_ai_entries_are_vetted_against_the_recording():
     assert entries[0]["verified"].startswith("follows sensor.pv_power")
     assert "verified" not in entries[1]
     assert "Load (22.67)" in notes[0] and "1 of the AI's entries" in notes[1]
+
+
+def test_references_that_trail_the_bus_still_match():
+    """Cloud integrations report what the device did a few minutes ago."""
+    records = [{"type": "header"}]
+    values = [200 + int(150 * math.sin(i / 4)) + (i * 7) % 23 for i in range(120)]
+    for i, value in enumerate(values):
+        records.append({"type": "transaction", "t": 10.0 * i, "unit": 1, "function": 4, "table": "input", "start": 0, "values": [value, i % 2]})
+        records[-1]["outcome"] = "answered"
+    for i in range(30, 120, 30 // 3):  # every 100 s, reporting the value of 300 s earlier
+        records.append({"type": "entity", "t": 10.0 * i, "entity_id": "sensor.cloud", "state": str(values[i - 30]), "unit_of_measurement": "W"})
+    (match,) = analyse("r.jsonl.gz", records).matches[1]
+    assert (match.address, match.scale) == (0, 1.0) and match.correlation > 0.99
+
+
+def test_a_register_flipping_between_two_values_matches_nothing():
+    records = [{"type": "header"}]
+    for i in range(40):
+        spike = 1250 if i == 5 else 300 + i % 3
+        records.append({"type": "transaction", "t": 10.0 * i, "unit": 1, "function": 4, "table": "input", "start": 0, "values": [1 if i == 5 else 0], "outcome": "answered"})
+        records.append({"type": "entity", "t": 10.0 * i + 1, "entity_id": "sensor.load", "state": str(spike), "unit_of_measurement": "W"})
+    assert analyse("r.jsonl.gz", records).matches[1] == []

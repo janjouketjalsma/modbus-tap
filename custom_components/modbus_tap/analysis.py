@@ -24,9 +24,11 @@ from .store import RegisterState
 from .writes import WriteLog
 
 MIN_POINTS = 6
+MIN_DISTINCT = 3
 MIN_CORRELATION = 0.9
 VERIFIED_CORRELATION = 0.97
-NICE_SCALES = tuple(10.0**k for k in range(-4, 5))
+NICE_SCALES = tuple(10.0**k for k in range(-3, 3))  # 0.001 … 100
+LAGS = (0, 60, 120, 180, 240, 300, 420, 600)  # seconds a reference may trail the bus (cloud integrations: often 4–5 minutes)
 VALUE_WINDOW = 600.0  # seconds a cloud value may lag behind the bus
 _NICE = frozenset(NICE_SCALES) | frozenset(-k for k in NICE_SCALES)
 
@@ -247,16 +249,24 @@ def _match_unit(unit: int, registers: dict[Key, Series], references: dict[str, R
 
 
 def _best_correlation(ref: Reference, candidates):
-    """With enough reference values: the Register that rises and falls with it."""
+    """With enough reference values: the Register that rises and falls with it,
+    allowing for the reference trailing the bus by one of LAGS."""
     best = None
     for table, address, data_type, swap, series in candidates:
-        pairs = [(x, y) for t, y in zip(ref.series.times, ref.series.values) if (x := series.at(t)) is not None]
-        if len(pairs) < MIN_POINTS:
+        fit = None
+        for lag in LAGS:
+            pairs = [(x, y) for t, y in zip(ref.series.times, ref.series.values) if (x := series.at(t - lag)) is not None]
+            if len(pairs) < MIN_POINTS:
+                continue
+            xs, ys = zip(*pairs)
+            r = _correlation(xs, ys)
+            if r is not None and (fit is None or abs(r) > abs(fit[0]) + 1e-9):
+                fit = (r, xs, ys)
+        if fit is None or abs(fit[0]) < MIN_CORRELATION:
             continue
-        xs, ys = zip(*pairs)
-        r = _correlation(xs, ys)
-        if r is None or abs(r) < MIN_CORRELATION:
-            continue
+        r, xs, ys = fit
+        if len(set(xs)) < MIN_DISTINCT:
+            continue  # a register flipping between two values "follows" any single spike
         scale = _scale(xs, ys)
         if not is_round_scale(scale):
             continue  # follows the reference, but isn't the same quantity (current against power, say)
@@ -274,6 +284,8 @@ def _best_value_match(ref: Reference, candidates):
     shortly before the reference did. Cloud values lag the bus, hence the window."""
     best = None
     points = list(zip(ref.series.times, ref.series.values))
+    if len(points) < MIN_DISTINCT:
+        return None  # two values that happen to match prove nothing
     for table, address, data_type, swap, series in candidates:
         windows = [sorted(set(series.window(t - VALUE_WINDOW, t + 60))) for t, _ in points]
         if not all(windows):

@@ -4,6 +4,15 @@ All notable changes to Modbus Tap. Versions follow [Semantic Versioning](https:/
 
 ## [Unreleased]
 
+## [0.6.3] - 2026-11-09
+
+### Fixed
+
+- Suggestions allow for reference values that trail the bus. Cloud integrations often report what the device did four or five minutes ago, which hid real matches.
+- A register that only flips between two values no longer matches a reference with a single spike, and two matching values are no longer enough to suggest an entry.
+- Scales of 0.0001 and smaller, or 1000 and larger, are no longer suggested.
+- Recordings download as `.jsonl.gz` on phones instead of `.bin`.
+
 ## [0.6.2] - 2026-11-09
 
 ### Fixed
@@ -105,7 +114,8 @@ First release.
 - Diagnostics with every register heard and hints.
 - Export to core Modbus YAML.
 
-[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.6.2...HEAD
+[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.6.3...HEAD
+[0.6.3]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.6.2...v0.6.3
 [0.6.2]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.5.0...v0.6.0

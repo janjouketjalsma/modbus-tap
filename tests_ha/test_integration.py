@@ -195,6 +195,8 @@ async def test_recording_with_reference_entity_and_note(hass: HomeAssistant, has
     link = urlsplit(tap.download_url(name))
     download = await client.get(f"{link.path}?{link.query}")
     assert download.status == 200
+    assert download.headers["Content-Type"] == "application/gzip"
+    assert "Content-Encoding" not in download.headers
     assert gzip.decompress(await download.read()).startswith(b'{"type":"header"')
     missing = await client.get(f"/api/modbus_tap/recordings/{entry.entry_id}/..%2Fsecrets.yaml")
     assert missing.status in (400, 404)
