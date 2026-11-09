@@ -36,6 +36,17 @@ The diagnostics download (integration page → ⋮ → **Download diagnostics**)
 
 Paste the map into **Configure → Sensors**, pick the unit, and put it under **Your entries** ([where's Configure?](finding-your-way.md#configure-the-settings-of-your-bus)) and compare the new sensors with your reference values for a day. Fix the scale, sign or type where they don't match. When you're happy, consider contributing the map so the next person with the same device starts from yours.
 
+## Settings: change one and watch
+
+Settings (export limits, charge currents, grid protection) rarely change on their own, and cloud integrations usually don't report them, so there's nothing to match against. Change them yourself instead:
+
+1. Start a recording.
+2. Change **one** setting in the manufacturer's app, and add a note saying what you changed, from what to what: "export limit 6000 → 5000 W".
+3. Wait for the poller to read the settings block again (a few minutes), then change it back, with another note.
+4. In the recording, the register that changed to your value and back at those moments is that setting.
+
+Only change settings you understand, and never grid protection settings: those are set for your grid connection.
+
 ## Prompt for an AI assistant
 
 Attach the recording (and the diagnostics file, if you have it), then paste:

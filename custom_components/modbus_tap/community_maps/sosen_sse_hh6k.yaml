@@ -93,6 +93,19 @@ sensors:
     state_class: measurement
     verified: "Follows SolarSynk's inverter power (r=1.00) in the morning recording"
   # Guess: 1.3-1.5 V below the grid voltage; possibly the backup (EPS) output.
+  # Guess: 2 while the sun is up, 0 from about half an hour after sunset.
+  - name: Inverter state
+    address: 153
+    input_type: input
+    data_type: uint16
+  # Guess: within about 11 W of SolarSynk's PV AC power, in steps of 10 W.
+  - name: PV AC power
+    address: 203
+    input_type: input
+    data_type: uint16
+    unit_of_measurement: W
+    device_class: power
+    state_class: measurement
   - name: Output voltage
     address: 49
     input_type: input
@@ -152,7 +165,7 @@ sensors:
     device_class: frequency
     state_class: measurement
     verified: "Within 0.02 Hz of SolarSynk's grid frequency in both recordings"
-  # Guess: follows the grid power (r=0.98), from the energy meter block at input 2048-2051.
+  # The same value in another block (input 2048-2051), which the Magpie reads when it's fully working.
   - name: Meter power
     address: 2048
     input_type: input
@@ -160,16 +173,17 @@ sensors:
     unit_of_measurement: W
     device_class: power
     state_class: measurement
+    verified: "Within 12 W of SolarSynk's grid power (r=0.98), negative while importing, in both recordings"
 
   # Load
-  # Guess: within about 20 W of SolarSynk's load power, which SolarSynk calculates.
   - name: Load power
-    address: 204
+    address: 79
     input_type: input
     data_type: uint16
     unit_of_measurement: W
     device_class: power
     state_class: measurement
+    verified: "Within 20 W of SolarSynk's load power, with and without sun, in both recordings"
 
   # Battery
   - name: Battery voltage
