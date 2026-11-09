@@ -7,7 +7,7 @@ Once your register map is complete, you may want Home Assistant to talk to the d
 
 ## 1. Export
 
-**Configure → Export to core Modbus** gives a ready-to-paste block:
+**Configure → Export to core Modbus** ([where's Configure?](finding-your-way.md#configure-the-settings-of-your-bus)) gives a ready-to-paste block:
 
 ```yaml
 modbus:

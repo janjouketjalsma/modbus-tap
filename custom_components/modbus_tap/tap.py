@@ -35,6 +35,7 @@ from .const import (
     DOMAIN,
     DOWNLOAD_URL,
     EVENT_WRITE,
+    RECORDINGS_GUIDE,
     RECORDINGS_PATH,
 )
 from .entity import bridge_identifier, unit_identifier
@@ -245,6 +246,17 @@ class Tap:
         self.session.start(bridge, units)
         await self.session.async_flush()
         self._on_status()
+        if not reference_entities:
+            persistent_notification.async_create(
+                self.hass,
+                "Recording started, but without reference sources, so it only contains bus traffic. "
+                "To log values you already have next to it (such as your inverter's cloud sensors), go to "
+                "**Settings → Devices & services → Modbus Tap**, click **Configure** on this bridge's entry, "
+                "choose **Settings** and set **Reference devices** or **Reference entity patterns**. "
+                f"Then stop and start the recording again. [More about recordings]({RECORDINGS_GUIDE})",
+                title="Modbus Tap: no reference sources",
+                notification_id=f"{DOMAIN}_{self.entry.entry_id}_no_references",
+            )
         return recording.name
 
     async def async_stop_recording(self, reason: str = "stopped") -> str | None:

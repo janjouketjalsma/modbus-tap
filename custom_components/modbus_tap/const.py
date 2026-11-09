@@ -34,3 +34,4 @@ DOWNLOAD_URL: Final = "/api/modbus_tap/recordings/{entry_id}/{name}"
 
 DOCS: Final = "https://github.com/janjouketjalsma/modbus-tap/blob/main/docs"
 TAPPING_GUIDE: Final = f"{DOCS}/tapping-your-bus.md"
+RECORDINGS_GUIDE: Final = f"{DOCS}/recordings.md"

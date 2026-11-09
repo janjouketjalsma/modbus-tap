@@ -2,10 +2,12 @@
 
 ## Guides
 
-1. [Tapping your bus](tapping-your-bus.md): hardware, finding the pins, the tap cable, bridge settings, troubleshooting
-2. [Register maps](register-maps.md): the format, community maps and overrides, documented and verified
-3. [Working out a register map](working-out-a-register-map.md): recordings, diagnostics, an AI-ready method and prompt
-4. [Replacing your poller](replacing-your-poller.md): moving to core Modbus once your map is complete
+1. [Finding your way around](finding-your-way.md): where Configure, the bridge device and everything else live
+2. [Tapping your bus](tapping-your-bus.md): hardware, finding the pins, the tap cable, bridge settings, troubleshooting
+3. [Register maps](register-maps.md): the format, community maps and overrides, documented and verified
+4. [Recordings](recordings.md): reference sources, recording, downloading, actions
+5. [Working out a register map](working-out-a-register-map.md): the method, diagnostics and an AI prompt
+6. [Replacing your poller](replacing-your-poller.md): moving to core Modbus once your map is complete
 
 ## Reference
 

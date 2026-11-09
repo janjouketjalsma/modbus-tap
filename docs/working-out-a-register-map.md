@@ -4,11 +4,7 @@ No documentation for your device? You can still work out what most registers mea
 
 ## 1. Record
 
-1. Under **Configure → Settings**, choose **Reference devices**: the device of an integration that already has your values, such as the vendor's cloud integration. Every sensor of that device (solar power, battery charge, grid power and so on) is logged with the bus traffic. These are your answer key. Values without a device, for example from an add-on that posts plain sensors, go under **Reference entity patterns** with `*` as a wildcard (`sensor.solarsynkv3_*`). Single extra entities go under **Extra reference entities**.
-2. Press **Start recording** on the bridge device, or use the `modbus_tap.start_recording` action.
-3. Let it run for a few hours while things change: sunrise, clouds, the oven on, the car charging. Two minutes at night shows almost nothing moving.
-4. Add notes when you do something the entities can't see, with `modbus_tap.add_note`, for example "kettle on" or "app shows 2.1 kW solar". A dashboard button or a phone shortcut makes this quick.
-5. Press **Stop recording**. Download the file from the notification, or later under **Configure → Recordings**.
+Make a [recording](recordings.md) of a few hours with your reference sources set: the values you already have from somewhere else, such as your inverter's cloud integration or add-on. They're your answer key. Add notes for things they can't see ("kettle on").
 
 ## 2. Analyse
 
@@ -36,7 +32,7 @@ The diagnostics download (integration page → ⋮ → **Download diagnostics**)
 
 ## 3. Check in Home Assistant
 
-Paste the map into **Configure → Register maps** and compare the new sensors with your reference values for a day. Fix the scale, sign or type where they don't match. When you're happy, consider contributing the map so the next person with the same device starts from yours.
+Paste the map into **Configure → Register maps** ([where's Configure?](finding-your-way.md#configure-the-settings-of-your-bus)) and compare the new sensors with your reference values for a day. Fix the scale, sign or type where they don't match. When you're happy, consider contributing the map so the next person with the same device starts from yours.
 
 ## Prompt for an AI assistant
 

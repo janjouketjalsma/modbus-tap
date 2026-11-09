@@ -4,6 +4,13 @@ All notable changes to Modbus Tap. Versions follow [Semantic Versioning](https:/
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-09
+
+### Added
+
+- A notification when a recording starts without reference sources, explaining where to set them.
+- Docs: [Finding your way around](docs/finding-your-way.md) (where Configure and everything else live) and [Recordings](docs/recordings.md) (reference devices, patterns and entities, downloading, actions with examples).
+
 ## [0.3.0] - 2026-11-09
 
 ### Added
@@ -39,7 +46,8 @@ First release.
 - Diagnostics with every register heard and hints.
 - Export to core Modbus YAML.
 
-[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.1.0...v0.1.1
