@@ -38,8 +38,10 @@ The **Recording** sensor on the bridge device shows the name of the running reco
 
 ## 3. Download
 
-- **Right away:** a notification (the bell) links to the finished recording. The link works for one hour.
+- **Right away:** a notification (the bell) links to the finished recording.
 - **Later:** **Configure → Recordings → Download or delete recordings** lists every recording with a fresh download link, and lets you delete the ones you don't need.
+
+Download links work for 24 hours, and stop working when Home Assistant restarts (after an update, say). The recording itself stays; an expired link tells you so and where to get a fresh one.
 
 Modbus Tap keeps your 20 most recent recordings by default; change this under **Configure → Recordings → Reference sources and storage**. The files are in your config folder under `modbus_tap/recordings/`, if you prefer the Samba or File editor add-on.
 

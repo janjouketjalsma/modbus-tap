@@ -55,7 +55,7 @@ from .writes import WriteLog
 _LOGGER = logging.getLogger(__name__)
 
 TICK = timedelta(seconds=30)
-LINK_LIFETIME = timedelta(hours=1)
+LINK_LIFETIME = timedelta(hours=24)  # Home Assistant's signing key also changes on every restart
 REFERENCE_DOMAINS = frozenset({"sensor", "binary_sensor"})
 WRITES_SAVE_DELAY = 60  # seconds; writes come in bursts, so save at most once a minute
 
@@ -291,10 +291,10 @@ class Tap:
         persistent_notification.async_create(
             self.hass,
             f"Recording **{session.name}** finished ({reason}).\n\n"
-            f"[Download it]({self.download_url(session.name)}) (link valid for one hour), or find it later under "
-            f"**Settings → Devices & services → Modbus Tap → Configure → Recordings → Download or delete recordings**.\n\n"
-            f"Next: turn it into a register map, yourself or with an AI assistant, and paste the result under "
-            f"**Configure → Sensors**. [How]({RECORDINGS_GUIDE}#how-it-fits-together)",
+            f"[Download it]({self.download_url(session.name)}). The link works for 24 hours, or until Home Assistant restarts if that comes first. "
+            f"For a fresh one: **Settings → Devices & services → Modbus Tap → Configure → Recordings → Download or delete recordings**.\n\n"
+            f"Next: turn it into sensors under **Configure → Recordings → Suggest a register map from a recording**. "
+            f"[How]({RECORDINGS_GUIDE}#how-it-fits-together)",
             title="Modbus Tap recording finished",
             notification_id=f"{DOMAIN}_{self.entry.entry_id}_recording",
         )

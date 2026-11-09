@@ -169,7 +169,7 @@ async def test_write_events(hass: HomeAssistant) -> None:
     await bridge.stop()
 
 
-async def test_recording_with_reference_entity_and_note(hass: HomeAssistant, hass_client) -> None:
+async def test_recording_with_reference_entity_and_note(hass: HomeAssistant, hass_client, hass_client_no_auth) -> None:
     bridge = FakeBridge()
     entry = await setup_entry(hass, await bridge.start())
     hass.states.async_set("sensor.pv_power", "2100", {"unit_of_measurement": "W"})
@@ -198,6 +198,12 @@ async def test_recording_with_reference_entity_and_note(hass: HomeAssistant, has
     assert gzip.decompress(await download.read()).startswith(b'{"type":"header"')
     missing = await client.get(f"/api/modbus_tap/recordings/{entry.entry_id}/..%2Fsecrets.yaml")
     assert missing.status in (400, 404)
+
+    anonymous = await hass_client_no_auth()
+    assert (await anonymous.get(f"{link.path}?{link.query}")).status == 200  # the signature is enough
+    expired = await anonymous.get(link.path)  # no or an invalid signature, as after a restart
+    assert expired.status == 403
+    assert "This download link has expired" in await expired.text()
 
     assert await hass.config_entries.async_unload(entry.entry_id)
     await bridge.stop()

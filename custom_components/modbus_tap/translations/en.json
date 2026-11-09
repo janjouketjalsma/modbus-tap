@@ -100,7 +100,7 @@
       },
       "recording_files": {
         "title": "Download or delete recordings",
-        "description": "{recordings}\n\nDownload links work for one hour. Select recordings below to delete them.",
+        "description": "{recordings}\n\nThese download links are made fresh each time you open this screen. They work for 24 hours, or until Home Assistant restarts if that comes first; reopen this screen for new ones. The recordings themselves stay until you delete them, or until there are more than you keep (set under **Reference sources and storage**).\n\nSelect recordings below to delete them.",
         "data": {
           "delete": "Delete"
         }

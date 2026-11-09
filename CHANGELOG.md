@@ -4,6 +4,14 @@ All notable changes to Modbus Tap. Versions follow [Semantic Versioning](https:/
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-11-09
+
+### Fixed
+
+- Download links that stopped working now open a page saying the link expired and where to get a fresh one, instead of failing silently. Links stop working when Home Assistant restarts, for example after an update, because Home Assistant makes a new signing key on every start.
+- Download links work for 24 hours instead of one hour, so a recording that finished overnight can still be downloaded from its notification in the morning.
+- The notification for a finished recording points to **Suggest a register map**.
+
 ## [0.6.1] - 2026-11-09
 
 ### Fixed
@@ -97,7 +105,8 @@ First release.
 - Diagnostics with every register heard and hints.
 - Export to core Modbus YAML.
 
-[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.6.2...HEAD
+[0.6.2]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.4.2...v0.5.0
