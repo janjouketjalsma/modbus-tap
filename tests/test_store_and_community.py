@@ -102,3 +102,10 @@ def test_bundled_maps_parse_and_match_the_schema():
     schema = json.loads((Path(__file__).parents[1] / "docs" / "register-map.schema.json").read_text())
     for path in MAPS_DIR.glob("*.yaml"):
         jsonschema.validate(yaml.safe_load(path.read_text()), schema)
+
+
+def test_serial_port_url():
+    from tap.const import serial_port_url
+
+    assert serial_port_url("192.168.1.120", 8899) == "socket://192.168.1.120:8899"
+    assert serial_port_url("fe80::1", 8899) == "socket://[fe80::1]:8899"

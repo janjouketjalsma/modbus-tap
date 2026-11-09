@@ -1,6 +1,8 @@
 # Sosen SSE-HH6K-P1-EU hybrid inverter, as polled by an Elinter Magpie at unit address 1.
 # Worked out from bus recordings; no manufacturer document was found.
-# References: the SolarSynk v3 add-on (cloud values trail the bus by 4-5 minutes).
+# References: the SolarSynk v3 add-on (cloud values trail the bus by 4-5 minutes),
+# in three recordings on 2026-11-09: morning (87 min), afternoon to evening (3 h 50 min).
+# Signs follow SolarSynk: grid power and current are negative while importing.
 # The Magpie also writes holding 2054-2059 every ~5 minutes: the inverter's clock
 # (year, month, day, hour, minute, second).
 # Entries without `verified` are educated guesses: check them against your app and
@@ -24,6 +26,14 @@ sensors:
     data_type: string
     count: 3
     verified: "SSE-HH6K-P1-EU, firmware V1.16 (reads 'V1.16')"
+  - name: Rated power
+    address: 152
+    input_type: input
+    data_type: uint16
+    unit_of_measurement: W
+    device_class: power
+
+  # Solar
   - name: PV1 voltage
     address: 1
     input_type: input
@@ -33,7 +43,7 @@ sensors:
     unit_of_measurement: V
     device_class: voltage
     state_class: measurement
-    verified: "Within 0.5 V of SolarSynk's PV MPPT 0 voltage over an 87-minute recording, 2026-11-09"
+    verified: "Follows SolarSynk's PV MPPT 0 voltage from 3 to 402 V (r=1.00) in the evening recording"
   - name: PV1 current
     address: 2
     input_type: input
@@ -43,7 +53,7 @@ sensors:
     unit_of_measurement: A
     device_class: current
     state_class: measurement
-    verified: "Follows SolarSynk's PV MPPT 0 current (r=0.99) over an 87-minute recording, 2026-11-09"
+    verified: "Within 0.01 A of SolarSynk's PV MPPT 0 current (r=0.99) in the morning recording"
   - name: PV1 power
     address: 3
     input_type: input
@@ -51,8 +61,20 @@ sensors:
     unit_of_measurement: W
     device_class: power
     state_class: measurement
-    verified: "Follows SolarSynk's PV MPPT 0 power (r=0.99) over an 87-minute recording, 2026-11-09"
-  - name: Output current
+    verified: "Follows SolarSynk's PV MPPT 0 power (r=0.99) in the morning recording"
+
+  # Inverter
+  - name: Inverter voltage
+    address: 28
+    input_type: input
+    data_type: uint16
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+    verified: "Follows SolarSynk's inverter voltage, down to 6 V at night (r=1.00) in the evening recording"
+  - name: Inverter current
     address: 31
     input_type: input
     data_type: uint16
@@ -61,35 +83,16 @@ sensors:
     unit_of_measurement: A
     device_class: current
     state_class: measurement
-    verified: "Follows SolarSynk's inverter current (r=1.00) over an 87-minute recording, 2026-11-09"
-  - name: Grid voltage
-    address: 37
+    verified: "Equals SolarSynk's inverter current (r=1.00) in the morning recording"
+  - name: Inverter power
+    address: 205
     input_type: input
     data_type: uint16
-    scale: 0.1
-    precision: 1
-    unit_of_measurement: V
-    device_class: voltage
-    state_class: measurement
-    verified: "Within 0.3 V of SolarSynk's grid voltage over an 87-minute recording, 2026-11-09"
-  - name: Grid power
-    address: 43
-    input_type: input
-    data_type: int16
     unit_of_measurement: W
     device_class: power
     state_class: measurement
-    verified: "Follows SolarSynk's grid power (r=0.99, negative is export) over an 87-minute recording, 2026-11-09"
-  - name: Grid frequency
-    address: 46
-    input_type: input
-    data_type: uint16
-    scale: 0.01
-    precision: 2
-    unit_of_measurement: Hz
-    device_class: frequency
-    state_class: measurement
-    verified: "Within 0.01 Hz of SolarSynk's grid frequency over an 87-minute recording, 2026-11-09"
+    verified: "Follows SolarSynk's inverter power (r=1.00) in the morning recording"
+  # Guess: 1.3-1.5 V below the grid voltage; possibly the backup (EPS) output.
   - name: Output voltage
     address: 49
     input_type: input
@@ -99,6 +102,7 @@ sensors:
     unit_of_measurement: V
     device_class: voltage
     state_class: measurement
+  # Guess: matches the grid frequency as closely as register 46 does.
   - name: Output frequency
     address: 58
     input_type: input
@@ -108,9 +112,79 @@ sensors:
     unit_of_measurement: Hz
     device_class: frequency
     state_class: measurement
+
+  # Grid
+  - name: Grid voltage
+    address: 37
+    input_type: input
+    data_type: uint16
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+    verified: "Within 0.3 V of SolarSynk's grid voltage in both recordings"
+  - name: Grid current
+    address: 40
+    input_type: input
+    data_type: int16
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: A
+    device_class: current
+    state_class: measurement
+    verified: "Within 0.1 A of SolarSynk's grid current, negative while importing, in both recordings"
+  - name: Grid power
+    address: 43
+    input_type: input
+    data_type: int16
+    unit_of_measurement: W
+    device_class: power
+    state_class: measurement
+    verified: "Follows SolarSynk's grid power (r=0.99), negative while importing, in both recordings"
+  - name: Grid frequency
+    address: 46
+    input_type: input
+    data_type: uint16
+    scale: 0.01
+    precision: 2
+    unit_of_measurement: Hz
+    device_class: frequency
+    state_class: measurement
+    verified: "Within 0.02 Hz of SolarSynk's grid frequency in both recordings"
+  # Guess: follows the grid power (r=0.98), from the energy meter block at input 2048-2051.
+  - name: Meter power
+    address: 2048
+    input_type: input
+    data_type: int16
+    unit_of_measurement: W
+    device_class: power
+    state_class: measurement
+
+  # Load
+  # Guess: within about 20 W of SolarSynk's load power, which SolarSynk calculates.
+  - name: Load power
+    address: 204
+    input_type: input
+    data_type: uint16
+    unit_of_measurement: W
+    device_class: power
+    state_class: measurement
+
+  # Battery
+  - name: Battery voltage
+    address: 16
+    input_type: input
+    data_type: int16
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+    verified: "Equals SolarSynk's battery voltage (r=1.00) in both recordings; reads about -2 V without a battery"
+
   # Energy counters come in groups: a lifetime total in two registers (low word
-  # first), then today's value. SolarSynk's values differ by a fixed amount but
-  # rise at the same rate.
+  # first), then today's value.
   - name: PV energy total
     address: 91
     input_type: input
@@ -121,7 +195,7 @@ sensors:
     unit_of_measurement: kWh
     device_class: energy
     state_class: total_increasing
-    verified: "Rises with SolarSynk's PV total, 0.9 kWh apart, over recordings of 87 and 58 minutes, 2026-11-09"
+    verified: "Equals SolarSynk's PV total in the morning recording"
   - name: PV energy today
     address: 93
     input_type: input
@@ -131,8 +205,49 @@ sensors:
     unit_of_measurement: kWh
     device_class: energy
     state_class: total_increasing
-    verified: "Rises with SolarSynk's PV today, 0.9 kWh apart, over recordings of 87 and 58 minutes, 2026-11-09"
-  # Guess: 2564 kWh; the export counter next to it matches SolarSynk's export today
+    verified: "Equals SolarSynk's PV today in the morning recording"
+  # Guess: equals SolarSynk's 45.8 kWh, but didn't change while recorded.
+  - name: Battery charge total
+    address: 95
+    input_type: input
+    data_type: uint32
+    swap: word
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: kWh
+    device_class: energy
+    state_class: total_increasing
+  # Guess, from the pattern.
+  - name: Battery charge today
+    address: 97
+    input_type: input
+    data_type: uint16
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: kWh
+    device_class: energy
+    state_class: total_increasing
+  # Guess: equals SolarSynk's 39.0 kWh, but didn't change while recorded.
+  - name: Battery discharge total
+    address: 99
+    input_type: input
+    data_type: uint32
+    swap: word
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: kWh
+    device_class: energy
+    state_class: total_increasing
+  # Guess, from the pattern.
+  - name: Battery discharge today
+    address: 101
+    input_type: input
+    data_type: uint16
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: kWh
+    device_class: energy
+    state_class: total_increasing
   - name: Grid export total
     address: 103
     input_type: input
@@ -143,7 +258,7 @@ sensors:
     unit_of_measurement: kWh
     device_class: energy
     state_class: total_increasing
-  # Guess: 1.1-1.4 kWh next to SolarSynk's 1.0-1.4 kWh
+    verified: "Equals SolarSynk's 2565.8 kWh in the evening recording"
   - name: Grid export today
     address: 105
     input_type: input
@@ -153,7 +268,7 @@ sensors:
     unit_of_measurement: kWh
     device_class: energy
     state_class: total_increasing
-  # Guess: 3606 kWh next to SolarSynk's 3605.7 kWh
+    verified: "Equals SolarSynk's 2.6 kWh in the evening recording"
   - name: Grid import total
     address: 107
     input_type: input
@@ -164,7 +279,7 @@ sensors:
     unit_of_measurement: kWh
     device_class: energy
     state_class: total_increasing
-  # Guess: rises with SolarSynk's import today, 0.2 kWh apart
+    verified: "Equals SolarSynk's import total over 15 values in the evening recording"
   - name: Grid import today
     address: 109
     input_type: input
@@ -174,7 +289,28 @@ sensors:
     unit_of_measurement: kWh
     device_class: energy
     state_class: total_increasing
-  # Guess: 6953 kWh next to SolarSynk's 6953 kWh; SolarSynk's load is calculated, so the rates differ a little
+    verified: "Equals SolarSynk's import today over 15 values in the evening recording"
+  # Guess: 5779 kWh against 6253 kWh of PV; no SolarSynk sensor to compare with.
+  - name: Inverter energy total
+    address: 111
+    input_type: input
+    data_type: uint32
+    swap: word
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: kWh
+    device_class: energy
+    state_class: total_increasing
+  # Guess: 7.0 kWh against 7.7 kWh of PV today.
+  - name: Inverter energy today
+    address: 113
+    input_type: input
+    data_type: uint16
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: kWh
+    device_class: energy
+    state_class: total_increasing
   - name: Load energy total
     address: 119
     input_type: input
@@ -185,7 +321,7 @@ sensors:
     unit_of_measurement: kWh
     device_class: energy
     state_class: total_increasing
-  # Guess: rises with SolarSynk's load today
+    verified: "Equals SolarSynk's load total over 15 values in the evening recording"
   - name: Load energy today
     address: 121
     input_type: input
@@ -195,17 +331,4 @@ sensors:
     unit_of_measurement: kWh
     device_class: energy
     state_class: total_increasing
-  - name: Rated power
-    address: 152
-    input_type: input
-    data_type: uint16
-    unit_of_measurement: W
-    device_class: power
-  - name: Inverter power
-    address: 205
-    input_type: input
-    data_type: uint16
-    unit_of_measurement: W
-    device_class: power
-    state_class: measurement
-    verified: "Follows SolarSynk's inverter power (r=1.00) over an 87-minute recording, 2026-11-09"
+    verified: "Equals SolarSynk's load today over 15 values in the evening recording"

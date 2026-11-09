@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform
+from homeassistant.const import CONF_HOST, CONF_PORT, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.util.hass_dict import HassKey
 
 from .community import CommunityMap, load_maps
-from .const import CONF_UNITS, DOMAIN
+from .const import CONF_DEVICE, CONF_UNITS, DOMAIN, serial_port_url
 from .download import RecordingDownloadView
 from .services import async_setup_services
 from .tap import Tap, writes_store
@@ -43,6 +43,15 @@ async def _async_options_updated(hass: HomeAssistant, entry: TapConfigEntry) -> 
     """Reload only when register maps change; other options are read live, so a running recording survives."""
     if dict(entry.options.get(CONF_UNITS, {})) != entry.runtime_data.units_config:
         await hass.config_entries.async_reload(entry.entry_id)
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: TapConfigEntry) -> bool:
+    if entry.version > 1:
+        return False  # from a newer Modbus Tap
+    if entry.minor_version < 2:
+        data = {**entry.data, CONF_DEVICE: serial_port_url(entry.data[CONF_HOST], entry.data[CONF_PORT])}
+        hass.config_entries.async_update_entry(entry, data=data, minor_version=2)
+    return True
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: TapConfigEntry) -> None:

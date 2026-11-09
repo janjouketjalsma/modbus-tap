@@ -27,6 +27,7 @@ from .bridge import CONNECT_TIMEOUT
 from .const import (
     ATTR_HOURS,
     CONF_COMMUNITY_MAP,
+    CONF_DEVICE,
     CONF_KEEP_RECORDINGS,
     CONF_OVERRIDES,
     CONF_REFERENCE_DEVICES,
@@ -40,6 +41,7 @@ from .const import (
     DEFAULT_PORT,
     DOMAIN,
     TAPPING_GUIDE,
+    serial_port_url,
 )
 from .community import suggest
 from .export import core_modbus_yaml
@@ -88,11 +90,13 @@ async def _can_connect(host: str, port: int) -> bool:
 
 
 def _bridge(user_input: dict[str, Any]) -> dict[str, Any]:
-    return {CONF_HOST: user_input[CONF_HOST].strip(), CONF_PORT: int(user_input[CONF_PORT])}
+    host, port = user_input[CONF_HOST].strip(), int(user_input[CONF_PORT])
+    return {CONF_HOST: host, CONF_PORT: port, CONF_DEVICE: serial_port_url(host, port)}
 
 
 class ModbusTapConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 1
+    MINOR_VERSION = 2  # 1.2: CONF_DEVICE added
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         errors: dict[str, str] = {}

@@ -36,6 +36,7 @@ Each Modbus unit heard on the bus gets its own device, named **Unit 1**, **Unit 
 
 ## Other places
 
+- **Serial ports** (**Settings → Connectivity → Serial**): your bridge, listed as in use by Modbus Tap, or as missing while Modbus Tap isn't running.
 - **Repairs** (**Settings → System → Repairs**): Modbus Tap's suggestions, such as "use this community map", and warnings about tap problems.
 - **Notifications** (the bell): a link to each finished recording.
 - **Actions** (**Developer tools → Actions**, or in automations): `modbus_tap.start_recording`, `modbus_tap.stop_recording` and `modbus_tap.add_note`.

@@ -4,6 +4,19 @@ All notable changes to Modbus Tap. Versions follow [Semantic Versioning](https:/
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-09
+
+### Added
+
+- Your bridge shows up under **Settings → Connectivity → Serial**, as a network serial port in use by Modbus Tap. Existing entries get this on update.
+- Sosen SSE-HH6K community map, checked against an afternoon-to-evening recording:
+  - New: grid current, inverter voltage, load power, meter power, battery voltage, battery charge and discharge energy, and inverter energy.
+  - Now verified: PV1 voltage, grid import, grid export and load energy, battery voltage.
+
+### Changed
+
+- Sosen SSE-HH6K: **Output current** is renamed **Inverter current**. Grid power and current are negative while importing, as in SolarSynk; the map said the opposite.
+
 ## [0.8.0] - 2026-11-09
 
 ### Added
@@ -132,7 +145,8 @@ First release.
 - Diagnostics with every register heard and hints.
 - Export to core Modbus YAML.
 
-[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.6.3...v0.7.0
 [0.6.3]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.6.2...v0.6.3

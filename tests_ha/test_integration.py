@@ -230,6 +230,16 @@ async def test_config_flow_and_reconfigure(hass: HomeAssistant) -> None:
         result = await hass.config_entries.flow.async_configure(result["flow_id"], {CONF_HOST: "192.168.1.121", CONF_PORT: 8899})
     assert result["reason"] == "reconfigure_successful"
     assert entry.data[CONF_HOST] == "192.168.1.121"
+    assert entry.data["device"] == "socket://192.168.1.121:8899"  # listed on the Serial page
+
+
+async def test_older_entries_get_their_serial_port_url(hass: HomeAssistant) -> None:
+    bridge = FakeBridge()
+    entry = await setup_entry(hass, await bridge.start())  # created as 1.1, without "device"
+    assert (entry.version, entry.minor_version) == (1, 2)
+    assert entry.data["device"] == f"socket://127.0.0.1:{entry.data[CONF_PORT]}"
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await bridge.stop()
 
 
 async def test_options_unit_map_validates_and_exports(hass: HomeAssistant) -> None:

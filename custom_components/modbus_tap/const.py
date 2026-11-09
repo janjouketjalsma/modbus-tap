@@ -5,6 +5,14 @@ from typing import Final
 DOMAIN: Final = "modbus_tap"
 
 DEFAULT_PORT: Final = 8899
+# The bridge as a serial port URL, so Settings → Connectivity → Serial lists it as in
+# use by Modbus Tap. Home Assistant reads this key; Modbus Tap itself uses host and port.
+CONF_DEVICE: Final = "device"
+
+
+def serial_port_url(host: str, port: int) -> str:
+    """The bridge as a raw TCP serial port: socket://host:port."""
+    return f"socket://[{host}]:{port}" if ":" in host else f"socket://{host}:{port}"
 
 # Options
 CONF_UNITS: Final = "units"  # {"<unit address>": {"community_map": id | None, "overrides": yaml}}
