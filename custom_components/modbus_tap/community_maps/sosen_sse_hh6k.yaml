@@ -108,10 +108,86 @@ sensors:
     unit_of_measurement: Hz
     device_class: frequency
     state_class: measurement
-  # Matches SolarSynk's grid import total (36057 next to 3605.7 kWh), but only three
-  # values were seen. Possibly the low half of a 32-bit counter (rolls over at 6553.5 kWh).
+  # Energy counters come in groups: a lifetime total in two registers (low word
+  # first), then today's value. SolarSynk's values differ by a fixed amount but
+  # rise at the same rate.
+  - name: PV energy total
+    address: 91
+    input_type: input
+    data_type: uint32
+    swap: word
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: kWh
+    device_class: energy
+    state_class: total_increasing
+    verified: "Rises with SolarSynk's PV total, 0.9 kWh apart, over recordings of 87 and 58 minutes, 2026-11-09"
+  - name: PV energy today
+    address: 93
+    input_type: input
+    data_type: uint16
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: kWh
+    device_class: energy
+    state_class: total_increasing
+    verified: "Rises with SolarSynk's PV today, 0.9 kWh apart, over recordings of 87 and 58 minutes, 2026-11-09"
+  # Guess: 2564 kWh; the export counter next to it matches SolarSynk's export today
+  - name: Grid export total
+    address: 103
+    input_type: input
+    data_type: uint32
+    swap: word
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: kWh
+    device_class: energy
+    state_class: total_increasing
+  # Guess: 1.1-1.4 kWh next to SolarSynk's 1.0-1.4 kWh
+  - name: Grid export today
+    address: 105
+    input_type: input
+    data_type: uint16
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: kWh
+    device_class: energy
+    state_class: total_increasing
+  # Guess: 3606 kWh next to SolarSynk's 3605.7 kWh
   - name: Grid import total
     address: 107
+    input_type: input
+    data_type: uint32
+    swap: word
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: kWh
+    device_class: energy
+    state_class: total_increasing
+  # Guess: rises with SolarSynk's import today, 0.2 kWh apart
+  - name: Grid import today
+    address: 109
+    input_type: input
+    data_type: uint16
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: kWh
+    device_class: energy
+    state_class: total_increasing
+  # Guess: 6953 kWh next to SolarSynk's 6953 kWh; SolarSynk's load is calculated, so the rates differ a little
+  - name: Load energy total
+    address: 119
+    input_type: input
+    data_type: uint32
+    swap: word
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: kWh
+    device_class: energy
+    state_class: total_increasing
+  # Guess: rises with SolarSynk's load today
+  - name: Load energy today
+    address: 121
     input_type: input
     data_type: uint16
     scale: 0.1

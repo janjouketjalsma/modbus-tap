@@ -51,6 +51,8 @@ What's inside a recording is described in [Recording format](recording-format.md
 
 **Configure → Recordings → Suggest a register map from a recording.** Pick a recording and a unit. Modbus Tap then:
 
+- **Matches counters on their rate.** Energy totals all rise together, so correlation can't tell them apart. For a reference that only goes up, Modbus Tap looks for the register that rises at the same rate, at a round scale. The two may differ by a fixed amount (a cloud total that missed some energy, say), and today's counter is told apart from the lifetime total by how close the values are.
+- **Ignores a reference source that gave up.** When most reference entities drop to 0 or unavailable at the same moment, those zeros are skipped: the cloud stopped reporting, the inverter didn't stop producing.
 - **Allows for lag.** Cloud integrations report what the device did a few minutes ago; Modbus Tap tries delays of up to ten minutes and uses the one that fits.
 - **Matches registers to reference entities.** For each reference entity, it looks for the register (or pair of registers, for 32-bit values) that follows it, and the scale that turns one into the other: ×0.1 for a voltage read as 2348, say. Only the scales devices use count (1, 0.1, 0.01 and so on); a register that follows a reference at some other factor is a different quantity.
   - With enough values (6 or more changes per entity), it uses correlation. Close matches get `verified`, with the entity and recording as evidence.

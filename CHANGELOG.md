@@ -4,6 +4,18 @@ All notable changes to Modbus Tap. Versions follow [Semantic Versioning](https:/
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-09
+
+### Added
+
+- Suggestions match energy counters on their rate: the register that rises at the same rate as the reference, even when the two differ by a fixed amount. Correlation can't tell counters apart, as they all go up together.
+- Sosen SSE-HH6K community map: PV, grid export, grid import and load energy, each as a lifetime total and today's value. PV energy is verified; the rest are guesses.
+
+### Changed
+
+- When most reference entities drop to 0 or unavailable at once, because their source gave up, those zeros are ignored when suggesting a map.
+- Sosen SSE-HH6K: **Grid import total** is now read as 32 bits, like the other totals. It gets a new entity; remove the old one from the Unit device.
+
 ## [0.7.0] - 2026-11-09
 
 ### Added
@@ -120,7 +132,8 @@ First release.
 - Diagnostics with every register heard and hints.
 - Export to core Modbus YAML.
 
-[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.6.3...v0.7.0
 [0.6.3]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.6.2...v0.6.3
 [0.6.2]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.6.1...v0.6.2

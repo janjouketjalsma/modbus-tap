@@ -164,3 +164,38 @@ def test_a_register_flipping_between_two_values_matches_nothing():
         records.append({"type": "transaction", "t": 10.0 * i, "unit": 1, "function": 4, "table": "input", "start": 0, "values": [1 if i == 5 else 0], "outcome": "answered"})
         records.append({"type": "entity", "t": 10.0 * i + 1, "entity_id": "sensor.load", "state": str(spike), "unit_of_measurement": "W"})
     assert analyse("r.jsonl.gz", records).matches[1] == []
+
+
+def test_counters_match_on_their_rate_even_with_an_offset():
+    """A cloud total that missed some energy still rises at the inverter's rate; today's
+    counter rises at the same rate as the lifetime total, but is much smaller."""
+    records = [{"type": "header"}]
+    total, today = 62476, 22  # 0.1 kWh, lifetime total in two registers (low word first)
+    for i in range(60):
+        total += i % 3 == 0
+        today += i % 3 == 0
+        records.append({"type": "transaction", "t": 60.0 * i, "unit": 1, "function": 4, "table": "input", "start": 10, "values": [total & 0xFFFF, total >> 16, today, 0, 7 + i % 2], "outcome": "answered"})
+        if i % 5 == 0:
+            records.append({"type": "entity", "t": 60.0 * i + 30, "entity_id": "sensor.pv_total", "state": f"{(total - 9) / 10:.1f}", "unit_of_measurement": "kWh"})
+            records.append({"type": "entity", "t": 60.0 * i + 30, "entity_id": "sensor.pv_today", "state": f"{(today - 9) / 10:.1f}", "unit_of_measurement": "kWh"})
+    result = analyse("r.jsonl.gz", records)
+    by_entity = {m.entity_id: m for m in result.matches[1]}
+    total_match, today_match = by_entity["sensor.pv_total"], by_entity["sensor.pv_today"]
+    assert (total_match.address, total_match.data_type, total_match.swap, total_match.scale) == (10, "uint32", "word", 0.1)
+    assert (today_match.address, today_match.scale) == (12, 0.1)
+    assert total_match.entry("r")["verified"].startswith("rises with sensor.pv_total")
+
+
+def test_zeros_from_a_reference_source_that_gave_up_are_ignored():
+    records = [{"type": "header"}]
+    for i in range(30):
+        t = 300.0 * i
+        power = 1000 + 300 * math.sin(i / 3) + (i % 4) * 20
+        records.append({"type": "transaction", "t": t, "unit": 1, "function": 4, "table": "input", "start": 0, "values": [int(power)], "outcome": "answered"})
+        dead = i >= 20  # the cloud integration gives up
+        for name, value in (("power", int(power)), ("voltage", 230 + i % 3), ("frequency", 50)):
+            records.append({"type": "entity", "t": t + 1, "entity_id": f"sensor.cloud_{name}", "state": "0" if dead else str(value), "unit_of_measurement": "W"})
+    result = analyse("r.jsonl.gz", records)
+    assert 0.0 not in result.references["sensor.cloud_power"].series.values
+    (match,) = [m for m in result.matches[1] if m.entity_id == "sensor.cloud_power"]
+    assert match.correlation > 0.99

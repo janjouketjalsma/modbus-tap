@@ -444,7 +444,7 @@ class ModbusTapOptionsFlow(OptionsFlow):
             return
         found = analysis.matches.get(unit, [])
         if found:
-            on_values = sum(1 for m in found if m.correlation is None)
+            on_values = sum(1 for m in found if m.correlation is None and not m.rate_points)
             notes.append(f"Matched **{len(found)}** registers to your reference entities" + (f" ({on_values} on a few values only)." if on_values else "."))
         elif not analysis.references:
             notes.append("This recording has no reference values, so there was nothing to match registers against. Set reference sources under **Reference sources and storage** and record again.")

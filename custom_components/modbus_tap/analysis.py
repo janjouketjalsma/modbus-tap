@@ -25,6 +25,8 @@ from .writes import WriteLog
 
 MIN_POINTS = 6
 MIN_DISTINCT = 3
+OUTAGE_BUCKET = 60.0  # seconds
+MAX_COUNTER_OFFSET = 0.5  # a counter may differ from its reference by up to half its value
 MIN_CORRELATION = 0.9
 VERIFIED_CORRELATION = 0.97
 NICE_SCALES = tuple(10.0**k for k in range(-3, 3))  # 0.001 … 100
@@ -92,6 +94,7 @@ class Match:
     correlation: float | None  # None: matched on values, too few for a correlation
     unit_of_measurement: str | None
     device_class: str | None
+    rate_points: int = 0  # counters: values that rose at exactly the reference's rate
 
     def entry(self, recording: str) -> dict[str, Any]:
         out: dict[str, Any] = {"name": self.name, "address": self.address, "input_type": self.table.value}
@@ -111,6 +114,8 @@ class Match:
             out["state_class"] = "total_increasing" if device_class == "energy" else "measurement"
         if self.correlation is not None and self.correlation >= VERIFIED_CORRELATION:
             out["verified"] = f"follows {self.entity_id} (r={self.correlation:.2f}) in {recording}"
+        elif self.rate_points >= MIN_POINTS:
+            out["verified"] = f"rises with {self.entity_id} over {self.rate_points} values in {recording}"
         return out
 
 
@@ -196,6 +201,7 @@ def _agrees(entry: dict[str, Any], current: Iterable[MapEntry]) -> bool:
 def analyse(recording: str, records: Iterable[dict[str, Any]]) -> Analysis:
     registers: dict[Key, Series] = {}
     references: dict[str, Reference] = {}
+    entity_records: list[dict[str, Any]] = []
     writes = WriteLog()
     for record in records:
         kind = record.get("type")
@@ -209,20 +215,51 @@ def analyse(recording: str, records: Iterable[dict[str, Any]]) -> Analysis:
             for offset, value in enumerate(record["values"]):
                 registers.setdefault((record["unit"], table, record["start"] + offset), Series()).add(record["t"], value)
         elif kind == "entity":
-            try:
-                value = float(record["state"])
-            except (TypeError, ValueError):
-                continue  # unavailable, unknown, text
-            ref = references.get(record["entity_id"])
-            if ref is None:
-                ref = references[record["entity_id"]] = Reference(
-                    record["entity_id"], record.get("friendly_name") or record["entity_id"],
-                    record.get("unit_of_measurement"), record.get("device_class"), Series(),
-                )
-            ref.series.add(record["t"], value)
+            entity_records.append(record)
+    outages = _outages(entity_records)
+    for record in entity_records:
+        try:
+            value = float(record["state"])
+        except (TypeError, ValueError):
+            continue  # unavailable, unknown, text
+        if value == 0 and int(record["t"] // OUTAGE_BUCKET) in outages:
+            continue  # the reference's source gave up, not a real zero
+        ref = references.get(record["entity_id"])
+        if ref is None:
+            ref = references[record["entity_id"]] = Reference(
+                record["entity_id"], record.get("friendly_name") or record["entity_id"],
+                record.get("unit_of_measurement"), record.get("device_class"), Series(),
+            )
+        ref.series.add(record["t"], value)
     units = sorted({key[0] for key in registers})
     matches = {unit: _match_unit(unit, registers, references) for unit in units}
     return Analysis(recording, registers, references, matches, units, writes)
+
+
+def _outages(records: list[dict[str, Any]]) -> set[int]:
+    """Moments when most references dropped to 0 or unavailable together: their
+    source (a cloud integration, say) gave up, so those zeros mean nothing."""
+    current: dict[str, bool] = {}  # entity → reads 0 or nothing
+    seen_live: set[str] = set()
+    outages: set[int] = set()
+    by_bucket: dict[int, list[dict[str, Any]]] = {}
+    for record in records:
+        by_bucket.setdefault(int(record["t"] // OUTAGE_BUCKET), []).append(record)
+    for bucket in sorted(by_bucket):
+        for record in by_bucket[bucket]:
+            try:
+                dead = float(record["state"]) == 0
+            except (TypeError, ValueError):
+                dead = record["state"] in ("unavailable", "unknown", "None", None)
+                if not dead:
+                    continue  # text: says nothing either way
+            current[record["entity_id"]] = dead
+            if not dead:
+                seen_live.add(record["entity_id"])
+        tracked = [e for e in seen_live if e in current]
+        if len(tracked) >= 3 and sum(current[e] for e in tracked) > len(tracked) / 2:
+            outages.update((bucket - 1, bucket))  # dropping out can take a moment
+    return outages
 
 
 def _match_unit(unit: int, registers: dict[Key, Series], references: dict[str, Reference]) -> list[Match]:
@@ -231,20 +268,23 @@ def _match_unit(unit: int, registers: dict[Key, Series], references: dict[str, R
     for ref in references.values():
         if _flat(ref.series.values):
             continue
-        if len(ref.series.values) >= MIN_POINTS:
+        if _counter(ref.series.values):
+            # Counters all go up together, so correlation can't tell them apart: match the rate.
+            best = _best_counter(ref, candidates, registers, unit)
+        elif len(ref.series.values) >= MIN_POINTS:
             best = _best_correlation(ref, candidates)
         else:
-            best = _best_value_match(ref, candidates)
+            best = _best_value_match(ref, candidates, registers, unit)
         if best is not None:
             ranked.append((best, ref))
     taken: set[tuple[Table, int]] = set()
     found: list[Match] = []
-    for (rank, table, address, data_type, swap, scale, correlation), ref in sorted(ranked, key=lambda item: item[0][0], reverse=True):
+    for (rank, table, address, data_type, swap, scale, correlation, rate_points), ref in sorted(ranked, key=lambda item: item[0][0], reverse=True):
         used = {(table, address + i) for i in range(2 if data_type.endswith("32") else 1)}
         if used & taken:
             continue
         taken |= used
-        found.append(Match(ref.entity_id, ref.name, unit, table, address, data_type, swap, scale, correlation, ref.unit, ref.device_class))
+        found.append(Match(ref.entity_id, ref.name, unit, table, address, data_type, swap, scale, correlation, ref.unit, ref.device_class, rate_points))
     return sorted(found, key=lambda m: (m.table.value, m.address))
 
 
@@ -274,14 +314,18 @@ def _best_correlation(ref: Reference, candidates):
         # needs no offset, as a Register map has a scale but rarely an offset.
         rank = (2, round(abs(r), 3), -round(_origin_error(xs, ys), 2), scale in _NICE, not data_type.endswith("32"))
         if best is None or rank > best[0]:
-            best = (rank, table, address, data_type, swap, scale, round(abs(r), 3))
+            best = (rank, table, address, data_type, swap, scale, round(abs(r), 3), 0)
     return best
 
 
-def _best_value_match(ref: Reference, candidates):
-    """With only a few reference values (a cloud integration that updates every
-    few minutes, say): the Register that showed each of them, at a round scale,
-    shortly before the reference did. Cloud values lag the bus, hence the window."""
+def _best_value_match(ref: Reference, candidates, registers: dict[Key, Series], unit: int, counter: bool = False):
+    """The Register that showed each reference value, at a round scale, shortly
+    before the reference did (cloud values lag the bus, hence the window).
+
+    Used for counters, and for references with too few values to correlate.
+    Counters must match to the last digit, and prefer 32 bits: a total that
+    fits in one register today won't forever.
+    """
     best = None
     points = list(zip(ref.series.times, ref.series.values))
     if len(points) < MIN_DISTINCT:
@@ -295,17 +339,58 @@ def _best_value_match(ref: Reference, candidates):
             seen = set()
             for (_, y), window in zip(points, windows):
                 hit = _nearest(window, y / scale)
-                if hit is None or abs(hit * scale - y) > _tolerance(y):
+                tolerance = _tolerance(y, counter)
+                if hit is None or abs(hit * scale - y) > tolerance:
                     break
-                error += abs(hit * scale - y) / _tolerance(y)
+                error += abs(hit * scale - y) / tolerance
                 seen.add(hit)
             else:
                 if len(seen) < 2:  # a value that never changed proves nothing
                     continue
-                rank = (1, -round(error / len(points), 2), not data_type.endswith("32"), abs(scale) <= 1, scale > 0)
+                wide = data_type.endswith("32")
+                # With an all-zero other half, two pairs fit; the one starting at the changing register reads naturally.
+                starts_moving = not _flat(registers[(unit, table, address)].values)
+                rank = (1, -round(error / len(points), 2), wide if counter else not wide, starts_moving, abs(scale) <= 1, scale > 0)
                 if best is None or rank > best[0]:
-                    best = (rank, table, address, data_type, swap, scale, None)
+                    best = (rank, table, address, data_type, swap, scale, None, 0)
     return best
+
+
+def _best_counter(ref: Reference, candidates, registers: dict[Key, Series], unit: int):
+    """The Register that rises at the same rate as a counter reference, at a round scale.
+
+    The two may differ by a constant (a cloud total that missed some energy, say),
+    so the rate has to match to within about one of the reference's last digit, and
+    the values only roughly (MAX_COUNTER_OFFSET).
+    Prefers 32 bits: a total that fits in one register today won't forever.
+    """
+    digit = max(10 ** -_decimals(y) for y in ref.series.values)
+    best = None
+    for table, address, data_type, swap, series in candidates:
+        if not _counter(series.values):
+            continue
+        starts_moving = not _flat(registers[(unit, table, address)].values)
+        for lag in LAGS:
+            pairs = [(x, y) for t, y in zip(ref.series.times, ref.series.values) if (x := series.at(t - lag)) is not None]
+            if len(pairs) < MIN_DISTINCT or len({x for x, _ in pairs}) < MIN_DISTINCT:
+                continue
+            for scale in NICE_SCALES:
+                offset = sum(y - scale * x for x, y in pairs) / len(pairs)
+                worst = max(abs(y - scale * x - offset) for x, y in pairs)
+                # Today's and the lifetime total rise at the same rate; the offset tells them apart.
+                drift = abs(offset) / max(abs(y) for _, y in pairs)
+                if worst > 1.5 * digit or drift > MAX_COUNTER_OFFSET:
+                    continue
+                rank = (1, -round(drift, 2), -round(worst / digit, 1), data_type.endswith("32"), starts_moving, -lag)
+                if best is None or rank > best[0]:
+                    # Verified only when the counter rose enough for a wrong match to drift apart.
+                    rose = max(y for _, y in pairs) - min(y for _, y in pairs)
+                    best = (rank, table, address, data_type, swap, scale, None, len(pairs) if worst <= digit and rose >= 10 * digit else 0)
+    return best
+
+
+def _decimals(value: float) -> int:
+    return len(f"{value:.6f}".rstrip("0").split(".")[1])
 
 
 def _nearest(values: list[float], target: float) -> float | None:
@@ -314,10 +399,16 @@ def _nearest(values: list[float], target: float) -> float | None:
     return min(near, key=lambda v: abs(v - target)) if near else None
 
 
-def _tolerance(value: float) -> float:
-    """1.5 %, or half the last digit the reference shows, whichever is larger."""
+def _tolerance(value: float, counter: bool = False) -> float:
+    """Half the last digit the reference shows; for measurements at least 1.5 %."""
     decimals = len(f"{value:.6f}".rstrip("0").split(".")[1])
-    return max(abs(value) * 0.015, 0.5 * 10**-decimals)
+    digit = 0.5 * 10**-decimals + 1e-9
+    return digit if counter else max(abs(value) * 0.015, digit)
+
+
+def _counter(values: list[float]) -> bool:
+    """Only ever goes up (an energy total, say)."""
+    return all(b >= a for a, b in zip(values, values[1:])) and len(set(values)) >= MIN_DISTINCT
 
 
 def _interpretations(unit: int, registers: dict[Key, Series]):
