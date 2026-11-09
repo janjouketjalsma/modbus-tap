@@ -19,7 +19,7 @@ import yaml
 
 from .hints import find_strings, register_hints
 from .model import WRITE_FUNCTIONS, Outcome, Table, Transaction
-from .register_map import MapEntry
+from .register_map import MapEntry, parse_entries
 from .store import RegisterState
 from .writes import WriteLog
 
@@ -258,6 +258,8 @@ def _best_correlation(ref: Reference, candidates):
         if r is None or abs(r) < MIN_CORRELATION:
             continue
         scale = _scale(xs, ys)
+        if not is_round_scale(scale):
+            continue  # follows the reference, but isn't the same quantity (current against power, say)
         # Equal correlation (a constant high word, say): prefer the reading that
         # needs no offset, as a Register map has a scale but rarely an offset.
         rank = (2, round(abs(r), 3), -round(_origin_error(xs, ys), 2), scale in _NICE, not data_type.endswith("32"))
@@ -377,6 +379,46 @@ def _scale(xs, ys) -> float:
             if abs(k - candidate) <= 0.15 * nice:
                 return candidate
     return float(f"{k:.4g}")
+
+
+def is_round_scale(scale: float) -> bool:
+    """1, 0.1, 0.01, 10 and so on, or minus those: the scales devices actually use."""
+    return any(math.isclose(scale, nice) for nice in _NICE)
+
+
+def vet(entries: list[dict[str, Any]], analysis: Analysis, unit: int) -> tuple[list[dict[str, Any]], list[str]]:
+    """Check entries from elsewhere (an AI) against the Recording.
+
+    Entries with a scale no device uses are left out, and `verified` is only kept
+    where Modbus Tap's own matching backs it up, with that as the evidence.
+    """
+    ours = {(m.table.value, m.address): m for m in analysis.matches.get(unit, [])}
+    kept, odd, unbacked = [], [], 0
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        scale = entry.get("scale", 1.0)
+        if not isinstance(scale, (int, float)) or not is_round_scale(float(scale)):
+            odd.append(f"{entry.get('name', '?')} ({scale})")
+            continue
+        entry = dict(entry)
+        match = ours.get((entry.get("input_type", "holding"), entry.get("address")))
+        evidence = match.entry(analysis.recording).get("verified") if match else None
+        if evidence and _agrees(match.entry(analysis.recording), _as_entries([entry])):
+            entry["verified"] = evidence
+        elif entry.pop("verified", None):
+            unbacked += 1
+        kept.append(entry)
+    notes = []
+    if odd:
+        notes.append(f"Left out {len(odd)} of the AI's entries with a scale no device uses: {', '.join(odd)}. That usually means a register that moves along with the reference without being the same thing.")
+    if unbacked:
+        notes.append(f"Removed `verified` from {unbacked} of the AI's entries: the recording doesn't back them up.")
+    return kept, notes
+
+
+def _as_entries(items: list[dict[str, Any]]) -> list[MapEntry]:
+    return parse_entries(items).entries
 
 
 def _samples(series: Series, count: int = 12) -> list:

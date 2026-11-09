@@ -116,3 +116,29 @@ def test_summary_lists_the_pollers_writes():
     ]
     data = json.loads(analyse("r.jsonl.gz", records).summary(1))
     assert data["writes_by_the_poller"] == [{"table": "holding", "registers": "2054-2055", "times": 2, "values": [[[1, 2], "confirmed", 2]]}]
+
+
+def test_odd_scales_are_never_suggested():
+    from tap.analysis import is_round_scale
+
+    assert all(is_round_scale(s) for s in (1, 1.0, 0.1, 0.01, 0.001, 10, -0.1))
+    assert not any(is_round_scale(s) for s in (-0.062, 22.67, 0.1291, 0.0003035, 0.01995, 2))
+
+
+def test_ai_entries_are_vetted_against_the_recording():
+    from tap.analysis import vet
+
+    result = analyse("r.jsonl.gz", _recording())
+    entries, notes = vet(
+        [
+            {"name": "Solar", "address": 0, "input_type": "input", "verified": "trust me"},  # backed up: our evidence replaces it
+            {"name": "Load", "address": 4, "input_type": "input", "scale": 22.67, "verified": "trust me"},  # odd scale: left out
+            {"name": "Status", "address": 5, "input_type": "input", "verified": "trust me"},  # not backed up
+        ],
+        result,
+        1,
+    )
+    assert [e["name"] for e in entries] == ["Solar", "Status"]
+    assert entries[0]["verified"].startswith("follows sensor.pv_power")
+    assert "verified" not in entries[1]
+    assert "Load (22.67)" in notes[0] and "1 of the AI's entries" in notes[1]

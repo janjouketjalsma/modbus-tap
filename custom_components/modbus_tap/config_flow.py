@@ -461,8 +461,9 @@ class ModbusTapOptionsFlow(OptionsFlow):
         if ai_entity:
             existing = yaml.safe_dump([to_core(e) for e in current], sort_keys=False, allow_unicode=True) if current else ""
             try:
-                text = await async_refine(self.hass, ai_entity, analysis, unit, existing)
+                text, checks = await async_refine(self.hass, ai_entity, analysis, unit, existing)
                 notes.append(f"Refined by the AI (`{ai_entity}`). Check its entries before saving: it can be wrong.")
+                notes.extend(checks)
             except HomeAssistantError as err:
                 notes.append(f"The AI couldn't help ({err}). Showing Modbus Tap's own matches.")
         self._suggestion_result = (text, notes)

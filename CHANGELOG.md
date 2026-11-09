@@ -4,6 +4,15 @@ All notable changes to Modbus Tap. Versions follow [Semantic Versioning](https:/
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-11-09
+
+### Fixed
+
+- Suggestions no longer contain odd scales such as `0.0003035` or `22.67`. Only the scales devices use (1, 0.1, 0.01, 0.001, 10, and their negatives) count as a match; a register that follows a reference at another factor is a different quantity.
+- The AI's suggestions are checked against the recording: entries with an odd scale are left out, and `verified` is only kept where Modbus Tap's own matching backs the entry up. The suggestion screen says what was changed.
+
+If you saved suggestions from 0.5.0 or 0.6.0, check them under **Configure → Sensors** for odd scales and unearned `verified` notes.
+
 ## [0.6.0] - 2026-11-09
 
 ### Added
@@ -88,7 +97,8 @@ First release.
 - Diagnostics with every register heard and hints.
 - Export to core Modbus YAML.
 
-[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.4.1...v0.4.2

@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import re
 
+import yaml
+
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 
-from .analysis import Analysis
+from .analysis import Analysis, vet
 from .register_map import RegisterMapError, parse_yaml
 
 AI_TASK_DOMAIN = "ai_task"
@@ -27,7 +29,10 @@ Return a register map in the Home Assistant Modbus sensor format: a YAML list, a
 nothing else. Each entry has name, address, input_type (holding or input), and where
 needed data_type (int16, uint16, int32, uint32, string), swap (word), count (for
 strings), scale, precision, unit_of_measurement, device_class and state_class.
-Add `verified: "<why>"` only to entries backed by a reference entity.
+Use only the scales devices use: 1, 0.1, 0.01, 0.001 or 10 (negative if the sign is
+flipped). A register that only roughly follows a reference at some other factor is a
+different quantity; leave it out. Don't add `verified`; Modbus Tap adds it where the
+recording backs an entry up.
 Only include registers you have real evidence for; leave the rest out.
 The unit already has these entries, which you should not repeat:
 {existing}
@@ -41,8 +46,8 @@ def ai_task_entities(hass: HomeAssistant) -> list[str]:
     return hass.states.async_entity_ids(AI_TASK_DOMAIN)
 
 
-async def async_refine(hass: HomeAssistant, entity_id: str, analysis: Analysis, unit: int, existing: str) -> str:
-    """The AI's proposal as validated YAML. Raises HomeAssistantError on any failure."""
+async def async_refine(hass: HomeAssistant, entity_id: str, analysis: Analysis, unit: int, existing: str) -> tuple[str, list[str]]:
+    """The AI's proposal as checked YAML, and notes on what was changed. Raises HomeAssistantError on any failure."""
     from homeassistant.components.ai_task import async_generate_data  # noqa: PLC0415 (optional dependency)
 
     result = await async_generate_data(
@@ -53,8 +58,10 @@ async def async_refine(hass: HomeAssistant, entity_id: str, analysis: Analysis, 
     )
     text = FENCE.sub("", str(result.data or "")).strip()
     try:
-        if not parse_yaml(text).entries:
-            raise HomeAssistantError("the AI returned no entries")
-    except RegisterMapError as err:
+        parse_yaml(text)
+        entries, notes = vet(yaml.safe_load(text) or [], analysis, unit)
+        if not entries:
+            raise HomeAssistantError(" ".join(notes) or "the AI returned no entries")
+    except (RegisterMapError, yaml.YAMLError, AttributeError) as err:
         raise HomeAssistantError(f"the AI's answer isn't a valid register map ({err})") from err
-    return text + "\n"
+    return yaml.safe_dump(entries, sort_keys=False, allow_unicode=True), notes

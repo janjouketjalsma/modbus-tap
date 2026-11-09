@@ -49,7 +49,7 @@ What's inside a recording is described in [Recording format](recording-format.md
 
 **Configure → Recordings → Suggest a register map from a recording.** Pick a recording and a unit. Modbus Tap then:
 
-- **Matches registers to reference entities.** For each reference entity, it looks for the register (or pair of registers, for 32-bit values) that follows it, and the scale that turns one into the other: ×0.1 for a voltage read as 2348, say.
+- **Matches registers to reference entities.** For each reference entity, it looks for the register (or pair of registers, for 32-bit values) that follows it, and the scale that turns one into the other: ×0.1 for a voltage read as 2348, say. Only the scales devices use count (1, 0.1, 0.01 and so on); a register that follows a reference at some other factor is a different quantity.
   - With enough values (6 or more changes per entity), it uses correlation. Close matches get `verified`, with the entity and recording as evidence.
   - With only a few values, it matches the values themselves and leaves the entry unverified. Cloud integrations often update every five minutes, so a ten-minute recording gives each entity two or three values. Record a few hours for stronger matches.
 - **Leaves out what you already have right.** Entries your current map already has, with the same type and scale, are counted but not suggested again.
@@ -61,7 +61,13 @@ Names, units and device classes come from the reference entities. Check them: a 
 
 If you've set up an **AI Task** in Home Assistant (through OpenAI, Google Gemini, Anthropic, Ollama or another AI integration), pick it in the **Also ask an AI** field. The AI gets a summary of the recording, not the file: the registers that changed with sample values, text found, the reference entities and Modbus Tap's own matches. It can add what correlation can't find, such as counters, states and settings.
 
-Its answer has to be a valid register map; if it isn't, or the AI doesn't answer, you get Modbus Tap's own matches with a note. An AI can be confidently wrong, so treat its entries as guesses until they've matched your reference values for a while.
+Modbus Tap checks the AI's answer before showing it:
+
+- It has to be a valid register map. If it isn't, or the AI doesn't answer, you get Modbus Tap's own matches with a note.
+- Entries with a scale no device uses (anything other than 1, 0.1, 0.01, 0.001, 10 and so on) are left out. An odd scale like `0.0003` or `22.67` means the register moves along with the reference without being the same thing: the PV current against PV power, say.
+- `verified` is only kept where Modbus Tap's own matching backs the entry up, with that as the evidence.
+
+An AI can still be confidently wrong, so treat its entries as guesses until they've matched your reference values for a while.
 
 The summary includes your reference entity IDs and values, and goes to whichever AI provider your AI Task uses.
 

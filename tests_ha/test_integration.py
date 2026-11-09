@@ -377,13 +377,14 @@ async def test_suggest_with_an_ai_and_its_failures(hass: HomeAssistant) -> None:
 
     async def answer(hass, entity_id, analysis, unit, existing):
         assert entity_id == "ai_task.helper" and '"unit":1' in analysis.summary(unit)
-        return "- name: Status\n  address: 1\n  input_type: input\n"
+        return "- name: Status\n  address: 1\n  input_type: input\n", ["Removed `verified` from 1 of the AI's entries"]
 
     with patch("custom_components.modbus_tap.config_flow.async_refine", side_effect=answer):
         result = await _suggest(hass, entry, ai_task="ai_task.helper")
     suggested = next(iter(result["data_schema"].schema)).description["suggested_value"]
     assert "name: Status" in suggested
     assert "Refined by the AI" in result["description_placeholders"]["notes"]
+    assert "Removed `verified`" in result["description_placeholders"]["notes"]
 
     from homeassistant.exceptions import HomeAssistantError
 
