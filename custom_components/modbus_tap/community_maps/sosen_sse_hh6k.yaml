@@ -1,5 +1,8 @@
 # Sosen SSE-HH6K-P1-EU hybrid inverter, as polled by an Elinter Magpie at unit address 1.
 # Worked out from bus recordings; no manufacturer document was found.
+# References: the SolarSynk v3 add-on (cloud values trail the bus by 4-5 minutes).
+# The Magpie also writes holding 2054-2059 every ~5 minutes: the inverter's clock
+# (year, month, day, hour, minute, second).
 # Entries without `verified` are educated guesses: check them against your app and
 # send a pull request with what you find.
 name: SSE-HH6K hybrid inverter
@@ -21,6 +24,44 @@ sensors:
     data_type: string
     count: 3
     verified: "SSE-HH6K-P1-EU, firmware V1.16 (reads 'V1.16')"
+  - name: PV1 voltage
+    address: 1
+    input_type: input
+    data_type: uint16
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+    verified: "Within 0.5 V of SolarSynk's PV MPPT 0 voltage over an 87-minute recording, 2026-11-09"
+  - name: PV1 current
+    address: 2
+    input_type: input
+    data_type: uint16
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: A
+    device_class: current
+    state_class: measurement
+    verified: "Follows SolarSynk's PV MPPT 0 current (r=0.99) over an 87-minute recording, 2026-11-09"
+  - name: PV1 power
+    address: 3
+    input_type: input
+    data_type: uint16
+    unit_of_measurement: W
+    device_class: power
+    state_class: measurement
+    verified: "Follows SolarSynk's PV MPPT 0 power (r=0.99) over an 87-minute recording, 2026-11-09"
+  - name: Output current
+    address: 31
+    input_type: input
+    data_type: uint16
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: A
+    device_class: current
+    state_class: measurement
+    verified: "Follows SolarSynk's inverter current (r=1.00) over an 87-minute recording, 2026-11-09"
   - name: Grid voltage
     address: 37
     input_type: input
@@ -30,6 +71,15 @@ sensors:
     unit_of_measurement: V
     device_class: voltage
     state_class: measurement
+    verified: "Within 0.3 V of SolarSynk's grid voltage over an 87-minute recording, 2026-11-09"
+  - name: Grid power
+    address: 43
+    input_type: input
+    data_type: int16
+    unit_of_measurement: W
+    device_class: power
+    state_class: measurement
+    verified: "Follows SolarSynk's grid power (r=0.99, negative is export) over an 87-minute recording, 2026-11-09"
   - name: Grid frequency
     address: 46
     input_type: input
@@ -39,6 +89,7 @@ sensors:
     unit_of_measurement: Hz
     device_class: frequency
     state_class: measurement
+    verified: "Within 0.01 Hz of SolarSynk's grid frequency over an 87-minute recording, 2026-11-09"
   - name: Output voltage
     address: 49
     input_type: input
@@ -57,9 +108,28 @@ sensors:
     unit_of_measurement: Hz
     device_class: frequency
     state_class: measurement
+  # Matches SolarSynk's grid import total (36057 next to 3605.7 kWh), but only three
+  # values were seen. Possibly the low half of a 32-bit counter (rolls over at 6553.5 kWh).
+  - name: Grid import total
+    address: 107
+    input_type: input
+    data_type: uint16
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: kWh
+    device_class: energy
+    state_class: total_increasing
   - name: Rated power
     address: 152
     input_type: input
     data_type: uint16
     unit_of_measurement: W
     device_class: power
+  - name: Inverter power
+    address: 205
+    input_type: input
+    data_type: uint16
+    unit_of_measurement: W
+    device_class: power
+    state_class: measurement
+    verified: "Follows SolarSynk's inverter power (r=1.00) over an 87-minute recording, 2026-11-09"

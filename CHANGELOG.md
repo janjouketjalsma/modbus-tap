@@ -4,6 +4,12 @@ All notable changes to Modbus Tap. Versions follow [Semantic Versioning](https:/
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-09
+
+### Added
+
+- Sosen SSE-HH6K community map: PV1 voltage, current and power, output current, grid power, grid import total and inverter power. Grid voltage and grid frequency are now verified. If you use this map, the new sensors appear after updating.
+
 ## [0.6.3] - 2026-11-09
 
 ### Fixed
@@ -114,7 +120,8 @@ First release.
 - Diagnostics with every register heard and hints.
 - Export to core Modbus YAML.
 
-[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.6.3...HEAD
+[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.6.3...v0.7.0
 [0.6.3]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.6.2...v0.6.3
 [0.6.2]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.6.0...v0.6.1
