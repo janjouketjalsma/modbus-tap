@@ -19,6 +19,7 @@ from .const import (
     CONF_COMMUNITY_MAP,
     CONF_KEEP_RECORDINGS,
     CONF_OVERRIDES,
+    CONF_REFERENCE_DEVICES,
     CONF_REFERENCE_ENTITIES,
     CONF_UNITS,
     CONF_WRITE_EVENTS,
@@ -236,6 +237,9 @@ class ModbusTapOptionsFlow(OptionsFlowWithReload):
         schema = probatio.Schema(
             {
                 probatio.Optional(CONF_WRITE_EVENTS, default=options.get(CONF_WRITE_EVENTS, False)): selector.BooleanSelector(),
+                probatio.Optional(
+                    CONF_REFERENCE_DEVICES, default=options.get(CONF_REFERENCE_DEVICES, [])
+                ): selector.DeviceSelector(selector.DeviceSelectorConfig(multiple=True)),
                 probatio.Optional(
                     CONF_REFERENCE_ENTITIES, default=options.get(CONF_REFERENCE_ENTITIES, [])
                 ): selector.EntitySelector(selector.EntitySelectorConfig(multiple=True)),

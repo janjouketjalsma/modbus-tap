@@ -14,7 +14,7 @@ from homeassistant.components.http.auth import async_sign_path
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.network import NoURLAvailableError, get_url
 
@@ -25,6 +25,8 @@ from .const import (
     CONF_COMMUNITY_MAP,
     CONF_KEEP_RECORDINGS,
     CONF_OVERRIDES,
+    CONF_REFERENCE_DEVICES,
+    CONF_REFERENCE_ENTITIES,
     CONF_UNITS,
     CONF_WRITE_EVENTS,
     DEFAULT_KEEP_RECORDINGS,
@@ -47,6 +49,7 @@ _LOGGER = logging.getLogger(__name__)
 
 TICK = timedelta(seconds=30)
 LINK_LIFETIME = timedelta(hours=1)
+REFERENCE_DOMAINS = frozenset({"sensor", "binary_sensor"})
 
 
 def unit_maps(options: Mapping[str, Any], community_maps: Mapping[str, CommunityMap]) -> dict[int, list[MapEntry]]:
@@ -197,6 +200,25 @@ class Tap:
                 issues.suggest_map(self.hass, self.entry, unit, match)
 
     # --- recordings ------------------------------------------------------------
+
+    @callback
+    def reference_entity_ids(self, entities: list[str] | None = None, devices: list[str] | None = None) -> list[str]:
+        """Reference entities for a Recording: the ones named, plus the sensors of the devices named.
+
+        With neither given, the defaults from Settings are used.
+        """
+        if entities is None and devices is None:
+            entities = self.entry.options.get(CONF_REFERENCE_ENTITIES, [])
+            devices = self.entry.options.get(CONF_REFERENCE_DEVICES, [])
+        registry = er.async_get(self.hass)
+        found = list(entities or [])
+        for device_id in devices or []:
+            found.extend(
+                entry.entity_id
+                for entry in er.async_entries_for_device(registry, device_id)
+                if entry.domain in REFERENCE_DOMAINS and not entry.disabled
+            )
+        return list(dict.fromkeys(found))
 
     async def async_start_recording(self, hours: float, reference_entities: list[str]) -> str:
         if self.session is not None:

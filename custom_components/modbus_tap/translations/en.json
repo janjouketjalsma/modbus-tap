@@ -70,12 +70,14 @@
         "title": "Settings",
         "data": {
           "write_events": "Fire an event for every write",
-          "reference_entities": "Reference entities for recordings",
+          "reference_devices": "Reference devices for recordings",
+          "reference_entities": "Extra reference entities",
           "keep_recordings": "Recordings to keep"
         },
         "data_description": {
           "write_events": "Fires `modbus_tap_write` with the unit, registers, values and outcome whenever the poller writes.",
-          "reference_entities": "Values logged next to the bus traffic in every recording started with the button, such as your inverter's cloud sensors.",
+          "reference_devices": "Every sensor of these devices is logged next to the bus traffic in recordings started with the button. Pick the device of your inverter's cloud integration to get all its values at once.",
+          "reference_entities": "Single entities to log as well, from any device.",
           "keep_recordings": "Older recordings are deleted automatically."
         }
       }
@@ -141,9 +143,13 @@
           "name": "Hours",
           "description": "Stop automatically after this many hours (at most 24)."
         },
+        "reference_devices": {
+          "name": "Reference devices",
+          "description": "Every sensor of these devices is logged alongside the bus traffic."
+        },
         "reference_entities": {
           "name": "Reference entities",
-          "description": "Entities whose values are logged alongside the bus traffic. Defaults to the ones in Settings."
+          "description": "Entities whose values are logged alongside the bus traffic. Leave this and reference devices empty to use the ones in Settings."
         }
       }
     },

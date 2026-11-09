@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import TapConfigEntry
-from .const import CONF_REFERENCE_ENTITIES, DEFAULT_RECORDING_HOURS
+from .const import DEFAULT_RECORDING_HOURS
 from .entity import TapEntity, bridge_identifier
 from .tap import Tap
 
@@ -25,9 +25,7 @@ BUTTONS = (
     RecordingButtonDescription(
         key="start_recording",
         translation_key="start_recording",
-        press=lambda tap: tap.async_start_recording(
-            DEFAULT_RECORDING_HOURS, list(tap.entry.options.get(CONF_REFERENCE_ENTITIES, []))
-        ),
+        press=lambda tap: tap.async_start_recording(DEFAULT_RECORDING_HOURS, tap.reference_entity_ids()),
         available=lambda tap: tap.session is None,
     ),
     RecordingButtonDescription(

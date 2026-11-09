@@ -14,6 +14,10 @@ start_recording:
           step: 0.05
           unit_of_measurement: h
           mode: box
+    reference_devices:
+      selector:
+        device:
+          multiple: true
     reference_entities:
       selector:
         entity:

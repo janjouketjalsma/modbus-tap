@@ -4,6 +4,12 @@ All notable changes to Modbus Tap. Versions follow [Semantic Versioning](https:/
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-09
+
+### Added
+
+- Reference devices for recordings: pick a device, such as your inverter's cloud integration, and all its sensors are logged next to the bus traffic. Available in Settings (for the Start recording button) and as `reference_devices` on the `modbus_tap.start_recording` action.
+
 ## [0.1.1] - 2026-11-09
 
 ### Fixed
@@ -27,6 +33,7 @@ First release.
 - Diagnostics with every register heard and hints.
 - Export to core Modbus YAML.
 
-[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/janjouketjalsma/modbus-tap/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/janjouketjalsma/modbus-tap/releases/tag/v0.1.0

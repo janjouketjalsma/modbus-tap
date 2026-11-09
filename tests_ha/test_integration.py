@@ -244,3 +244,28 @@ async def test_options_unit_map_validates_and_exports(hass: HomeAssistant) -> No
     assert "rtuovertcp" in result["description_placeholders"]["yaml"]
     assert await hass.config_entries.async_unload(entry.entry_id)
     await bridge.stop()
+
+
+async def test_recording_reference_devices(hass: HomeAssistant) -> None:
+    bridge = FakeBridge()
+    entry = await setup_entry(hass, await bridge.start())
+    cloud = MockConfigEntry(domain="cloud_inverter")
+    cloud.add_to_hass(hass)
+    device = dr.async_get(hass).async_get_or_create(config_entry_id=cloud.entry_id, identifiers={("cloud_inverter", "sn1")})
+    entities = er.async_get(hass)
+    pv = entities.async_get_or_create("sensor", "cloud_inverter", "pv", device_id=device.id, config_entry=cloud)
+    soc = entities.async_get_or_create("sensor", "cloud_inverter", "soc", device_id=device.id, config_entry=cloud)
+    entities.async_get_or_create("switch", "cloud_inverter", "mode", device_id=device.id, config_entry=cloud)
+    hass.states.async_set(pv.entity_id, "2100", {"unit_of_measurement": "W"})
+    hass.states.async_set(soc.entity_id, "55", {"unit_of_measurement": "%"})
+
+    response = await hass.services.async_call(
+        DOMAIN, "start_recording", {"config_entry": entry.entry_id, "reference_devices": [device.id]}, blocking=True, return_response=True
+    )
+    await hass.services.async_call(DOMAIN, "stop_recording", {"config_entry": entry.entry_id}, blocking=True)
+    path = entry.runtime_data.library.directory / response["recording"]
+    lines = [json.loads(line) for line in gzip.open(path, "rt") if line.strip()]
+    assert sorted(lines[0]["reference_entities"]) == sorted([pv.entity_id, soc.entity_id])
+    assert {line["entity_id"] for line in lines if line["type"] == "entity"} == {pv.entity_id, soc.entity_id}
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await bridge.stop()

@@ -13,6 +13,7 @@ from .const import (
     ATTR_CONFIG_ENTRY,
     ATTR_HOURS,
     ATTR_TEXT,
+    CONF_REFERENCE_DEVICES,
     CONF_REFERENCE_ENTITIES,
     DEFAULT_RECORDING_HOURS,
     DOMAIN,
@@ -29,6 +30,7 @@ START_SCHEMA = ENTRY_SCHEMA.extend(
             probatio.Coerce(float), probatio.Range(min=0.05, max=DEFAULT_RECORDING_HOURS)
         ),
         probatio.Optional(CONF_REFERENCE_ENTITIES): cv.entity_ids,
+        probatio.Optional(CONF_REFERENCE_DEVICES): probatio.All(cv.ensure_list, [cv.string]),
     }
 )
 NOTE_SCHEMA = ENTRY_SCHEMA.extend({probatio.Required(ATTR_TEXT): cv.string})
@@ -47,8 +49,8 @@ def async_setup_services(hass: HomeAssistant) -> None:
         tap = _tap(hass, call)
         if tap.session is not None:
             raise ServiceValidationError(translation_domain=DOMAIN, translation_key="already_recording")
-        references = call.data.get(CONF_REFERENCE_ENTITIES, tap.entry.options.get(CONF_REFERENCE_ENTITIES, []))
-        name = await tap.async_start_recording(call.data[ATTR_HOURS], list(references))
+        references = tap.reference_entity_ids(call.data.get(CONF_REFERENCE_ENTITIES), call.data.get(CONF_REFERENCE_DEVICES))
+        name = await tap.async_start_recording(call.data[ATTR_HOURS], references)
         return {"recording": name}
 
     async def stop(call: ServiceCall) -> dict:
