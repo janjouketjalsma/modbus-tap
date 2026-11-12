@@ -4,6 +4,10 @@ All notable changes to Modbus Tap. Versions follow [Semantic Versioning](https:/
 
 ## [Unreleased]
 
+### Fixed
+
+- Use the supported device registry ID when linking Unit devices to their Bridge.
+
 ## [0.10.0] - 2026-11-09
 
 ### Added

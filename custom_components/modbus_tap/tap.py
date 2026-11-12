@@ -103,15 +103,15 @@ class Tap:
     def start(self) -> None:
         entry = self.entry
         devices = dr.async_get(self.hass)
-        devices.async_get_or_create(
+        bridge = devices.async_get_or_create(
             config_entry_id=entry.entry_id,
             identifiers={bridge_identifier(entry)},
             translation_key="bridge",
             translation_placeholders={"title": entry.title},
         )
         for unit in self.maps:
-            self._ensure_unit_device(unit)
-        entry.async_on_unload(self.store.on_new_unit(self._ensure_unit_device))
+            self._ensure_unit_device(unit, bridge.id)
+        entry.async_on_unload(self.store.on_new_unit(lambda unit: self._ensure_unit_device(unit, bridge.id)))
         entry.async_on_unload(async_track_time_interval(self.hass, self._async_tick, TICK))
         entry.async_create_background_task(self.hass, self.listener.run(), f"{DOMAIN} {entry.title}")
         entry.async_on_unload(self.listener.stop)
@@ -193,13 +193,13 @@ class Tap:
     # --- devices and suggestions -----------------------------------------------
 
     @callback
-    def _ensure_unit_device(self, unit: int) -> None:
+    def _ensure_unit_device(self, unit: int, bridge_device_id: str) -> None:
         dr.async_get(self.hass).async_get_or_create(
             config_entry_id=self.entry.entry_id,
             identifiers={unit_identifier(self.entry, unit)},
             translation_key="unit",
             translation_placeholders={"address": str(unit)},
-            via_device=bridge_identifier(self.entry),
+            via_device_id=bridge_device_id,
         )
 
     @callback
